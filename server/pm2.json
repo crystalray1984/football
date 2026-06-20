@@ -1,0 +1,14 @@
+{
+  "apps": [
+    {
+      "name": "football-server",
+      "script": "./dist/index.js",
+      "env": {
+        "NODE_ENV": "production",
+        "TZ": "Asia/Shanghai"
+      },
+      "log_date_format": "YYYY-MM-DDTHH:mm:ss",
+      "merge_logs": true
+    }
+  ]
+}
