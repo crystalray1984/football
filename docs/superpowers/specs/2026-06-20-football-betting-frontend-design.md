@@ -27,6 +27,9 @@
   - `pages/index/Matches.vue` —— 已有取数 + 10s 轮询逻辑，`<template>` 为空，需补全 UI。
   - `pages/match/index.vue` —— 空文件，需完整实现。
 - 请求封装：`src/api.ts` 的 `api<T>()`，`token` 通过 header 传递（即 openid）。
+- 类型：`src/types.d.ts` 现有 `Match` 仅含列表字段且 `score1/score2` 标注为非空。需扩充：
+  - `MatchDetail`（含 `state`、`ah_condition`、`ah1_value`、`ah2_value`、`win_open`、`win1_value`、`win2_value`、`draw_value`），`score1/score2` 改为 `number | null`。
+  - `BetRecord`（`id`、`type`、`condition`、`value`、`amount`、`result`、`result_profit`、`user?: { name: string }`），`type` 为 `"ah1" | "ah2" | "win1" | "win2" | "draw"`。
 
 ## 3. 信息架构与导航
 
@@ -65,12 +68,12 @@
 - 顶部：标题"足球竞猜"（导航栏由 `pages.json` globalStyle 提供）。
 - 单列卡片流，按后端返回顺序渲染（已排序：可投注 → 进行中 → 已结束）。
 - 每张卡片：
-  - 上排：左＝比赛时间（`dayjs` 格式化，如"今晚 23:00 / 昨天 03:00 / MM-DD HH:mm"），右＝状态胶囊。
+  - 上排：左＝比赛时间（`dayjs` 格式化，如"今天 23:00 / 昨天 03:00 / MM-DD HH:mm"），右＝状态胶囊。
   - 中排：主队名（左）— 中间 `VS`（未结束）或 `比分`（已结束，如 `2 : 1`）— 客队名（右）；最右 `>` 指示可进详情。
-- **比分仅 `has_score=1` 时显示**；进行中不显示比分。
+- **比分仅 `has_score=1` 时显示**；进行中不显示比分。`score1/score2` 可能为 `null`，渲染前需空值保护（缺值时回退为 `VS`）。
 - 整卡可点 → 详情页。
 
-时间格式约定（`dayjs`，本地时区）：今天→"今天 HH:mm"或"今晚 HH:mm"、昨天→"昨天 HH:mm"、其他→"MM-DD HH:mm"。实现可简化为"今天/昨天/MM-DD" + " HH:mm"。
+时间格式约定（`dayjs`，本地时区）：今天→"今天 HH:mm"、昨天→"昨天 HH:mm"、其他→"MM-DD HH:mm"。
 
 刷新：页面激活时每 10s 轮询 `GET /api/match/list`（沿用现有逻辑），失活清除定时器。
 
@@ -89,7 +92,8 @@
    - 三个赔率按钮：`{主队名}`(win1) / `平局`(draw) / `{客队名}`(win2)，数字分别为 `win1_value`/`draw_value`/`win2_value`。
 4. **投注记录**小节：卡片内列表，按 `id` 倒序（最新在上）。每行：
    - 左：上行投注人 `user.name`；下行盘口文案 `盘口 @赔率`（映射见第 8 节）。**无头像。**
-   - 右：上行 `投 ¥{amount}`；下行结算——`result_profit` 为正显示绿色 `+{值}`、为负显示红色 `{值}`、`result` 为空显示灰色"待结算"。
+   - 右：上行 `投 ¥{amount}`；下行结算——`result_profit` 为正显示绿色 `+{值}`、为负显示红色 `{值}`、未结算（见下）显示灰色"待结算"。
+   - ⚠️ 结算口径为**假设**（见第 14 节）：暂以 `result_profit == null` 判为"待结算"，非空时按正负着色并显示净值。待后端确认后可能调整。
 
 赔率按钮可点性随状态：
 - **可投注**：按钮高亮可点 → 唤起投注弹层，预选该方向。
@@ -109,7 +113,7 @@
 - 标题行：`投注 · {让球盘|胜平负}` + 右侧关闭 ✕。
 - 副标题：`{主队名} VS {客队名}`（让球盘追加 ` · 让球 {主队名} {让球数}`）。
 - **盘口组**：展示被点击的那一组（让球的两个方向 / 胜平负的三个方向），当前选中方向绿色高亮 + ✓，可在组内切换方向。
-- **投注金额**：数字输入（唤起数字键盘），左侧 `¥`，右侧提示"限 50 - 500"。
+- **投注金额**：数字输入（`type="number"` 唤起数字键盘），左侧 `¥`，右侧提示"限 50 - 500"。仅接受整数——实时剥除小数点/非法字符并 `parseInt`，与快捷金额双向同步。
 - 快捷金额：`50 / 100 / 200 / 500`，点选回填并高亮（绿描边）。
 - **预计可赢**：让球＝`本金 × 水位`；胜平负＝`本金 × (赔率 − 1)`；用 `decimal.js` 计算并保留 2 位（如 `¥95.00`）。金额为空时显示 `¥0.00`。
 - **确认投注**按钮（整宽，绿底 `#19c37d`）：金额合法才可点。
@@ -169,15 +173,25 @@
 
 ## 11. 后端最小修复（纳入本次范围）
 
-前端联调前必须修复以下后端缺陷（`server/src/routes.ts`）：
+前端联调前必须修复以下后端缺陷，否则核心流程跑不通。除特别标注外均在 `server/src/routes.ts`。
 
 1. 路由绑定错误：`app.get("/api/match/bets", getMatchDetail)` 应为 `getMatchBets`，否则取不到投注记录。
 2. 判空逻辑写反，导致合法请求被拒：
    - `getMatchDetail`：`if (!isNaN(match_id) || match_id <= 0)` 应为 `if (isNaN(match_id) || match_id <= 0)`。
    - `getMatchBets`：同上 `match_id` 判断。
    - `bet`：`match_id` 判断 `!isNaN(...)` → `isNaN(...)`；`amount` 判断 `!isNaN(amount)` → `isNaN(amount)`。
+3. 首次投注崩溃：`bet` 中 `Decimal(sum)` 在该用户该场首投时 `sum` 为 `null`（`Bet.sum` 无行返回 null），`new Decimal(null)` 抛错 → 第一笔投注 500。改为 `Decimal(sum || 0)`。
+4. 投注人关联方向错误（`server/src/db/models/Bet.ts`）：`@HasOne(() => User, "openid")` 会按 `User.openid = Bet.id` 关联，恒不匹配，`include:[User]` 取回的 `user` 永远为空 → 投注记录无投注人。改为 `@BelongsTo(() => User, "openid")`（`Bet.openid = User.openid`），并确认 `getMatchBets` 返回的每条记录可经 `bet.user?.name` 取到姓名（必要时为 include 显式指定 `as: "user"`）。
 
-仅修复上述行，不改动其它后端逻辑。
+仅修复上述项，不改动其它后端业务逻辑。
+
+## 11b. 小程序壳层配置（pages.json）
+
+当前 `globalStyle` 为浅色，与午夜盘口深色内容割裂，必须调整：
+
+- `globalStyle`：`navigationBarBackgroundColor: "#141b2c"`、`navigationBarTextStyle: "white"`、`backgroundColor: "#0e1320"`、`navigationBarTitleText: "足球竞猜"`。
+- `pages/match/index` 的 `style` 单独设 `navigationBarTitleText: "比赛详情"`。
+- 页面用的是**原生导航栏**（非设计稿里画的自定义顶栏），标题样式由此处决定。
 
 ## 12. 校验规则
 
@@ -195,4 +209,15 @@
 - [ ] 封盘状态赔率按钮不可点。
 - [ ] 弹层选中方向高亮，可组内切换；预计可赢按口径计算正确。
 - [ ] 投注成功关弹层+刷新；-2 提示盘口变化。
-- [ ] 后端 4 处修复完成，详情/记录/投注接口可用。
+- [ ] 后端修复完成（路由绑定、判空、首投 null 守卫、用户关联），详情/记录/投注接口可用且投注记录能取到投注人。
+- [ ] 小程序原生导航栏与页面底色为深色，详情页标题为"比赛详情"。
+
+## 14. 假设与待确认
+
+本仓库内**没有结算逻辑**，`result_profit`/`result` 从未被赋值（结算由外部服务/脚本完成）。以下为前端采用的假设，需后端/需求方确认，否则投注记录的结算展示可能有误：
+
+- `result_profit` 表示**净盈亏**（赢为正、输为负），而非总派彩。
+- 未结算时 `result_profit` 为 `null`（据此显示"待结算"）。
+- 若实际为：输=0 而非负数、或用 `result` 字段区分赢/输/未结算、或 `result_profit` 存的是总派彩——则需相应调整第 6 节的着色与符号规则。
+
+部署相关（非本设计目标，实现时注意）：`src/api.ts` 的 `API_BASE` 为 `http://127.0.0.1:10030`，真机/微信端需改为 https 且配置请求域名白名单；开发期用微信开发者工具勾选"不校验合法域名"。
