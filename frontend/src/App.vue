@@ -11,6 +11,13 @@ onHide(() => {
 });
 </script>
 <style lang="scss">
+@import "./styles/tokens.scss";
+
+page {
+  background-color: $c-bg;
+  color: $c-text;
+}
+
 .flex-1 {
   flex: 1;
 }
