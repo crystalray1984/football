@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { api } from "@/api";
+import { api, getToken } from "@/api";
 import {
   betCondition,
   directionLabel,
   displayOdds,
   oddsValue,
   recordOddsText,
-  settlement,
+  SettlementState,
   type BetType,
 } from "@/utils/bet";
 import { formatMatchTime, matchStatusText } from "@/utils/format";
@@ -17,7 +17,9 @@ import {
   onShow,
   onUnload,
 } from "@dcloudio/uni-app";
-import { ref } from "vue";
+import Decimal from "decimal.js";
+import { computed, reactive, ref } from "vue";
+import BetRecord from "./BetRecord.vue";
 import BetSheet from "./BetSheet.vue";
 import OddsButton from "./OddsButton.vue";
 
@@ -100,8 +102,6 @@ const label = (t: BetType) =>
   match.value ? directionLabel(t, match.value) : "";
 const odds = (t: BetType) =>
   match.value ? displayOdds(oddsValue(t, match.value)) : "";
-const recText = (bet: BetRecord) =>
-  match.value ? recordOddsText(bet, match.value) : "";
 
 onLoad((query) => {
   matchId.value = Number(query?.match_id) || 0;
@@ -115,22 +115,178 @@ onUnload(() => clearInterval(timer));
 onShareAppMessage(() => {
   return {};
 });
+
+const ADMIN = ["oc2fT5Oit4YpELFxpp2kTqSPKVis", "oc2fT5KZcBTUOm7Flb_OIwxIpKwk"];
+const isAdmin = ADMIN.includes(getToken());
+
+const emulateScore = reactive({
+  active: false,
+  score1: 0,
+  score2: 0,
+});
+
+const toggleEmulate = () => {
+  if (isAdmin) {
+    emulateScore.active = !emulateScore.active;
+  }
+};
+
+const onClickTeam1 = () => {
+  if (!emulateScore.active) return;
+  emulateScore.score1++;
+};
+
+const onClickTeam2 = () => {
+  if (!emulateScore.active) return;
+  emulateScore.score2++;
+};
+
+const compareScore = (
+  score1: Decimal.Value,
+  score2: Decimal.Value,
+): "-0.5" | "-1" | "0" | "0.5" | "1" => {
+  //给作为比对的结果加上盘口
+  const delta = Decimal(score1).sub(score2);
+  if (delta.eq("0")) return "0";
+  if (delta.gte("0.5")) {
+    return "1";
+  }
+  if (delta.gte("0.25")) {
+    return "0.5";
+  }
+  if (delta.lte("-0.5")) {
+    return "-1";
+  }
+  if (delta.lte("-0.25")) {
+    return "-0.5";
+  }
+  return "0";
+};
+
+const getEmulateResult = (bet: BetRecord) => {
+  if (!match.value) return;
+  if (!emulateScore.active) return;
+  let result_value: string;
+  if (bet.type === "ah1") {
+    result_value = compareScore(
+      Decimal(emulateScore.score1).add(bet.condition),
+      emulateScore.score2,
+    );
+  } else if (bet.type === "ah2") {
+    //让球，买客队
+    result_value = compareScore(
+      Decimal(emulateScore.score2).add(bet.condition),
+      emulateScore.score1,
+    );
+  } else if (bet.type === "win1") {
+    result_value = emulateScore.score1 > emulateScore.score2 ? "1" : "-1";
+  } else if (bet.type === "win2") {
+    result_value = emulateScore.score1 < emulateScore.score2 ? "1" : "-1";
+  } else {
+    result_value = emulateScore.score1 === emulateScore.score2 ? "1" : "-1";
+  }
+
+  let result: number;
+
+  //胜负计算
+  let state: SettlementState;
+  switch (result_value) {
+    case "0.5":
+    case "1":
+      result = 1;
+      state = "win";
+      break;
+    case "-0.5":
+    case "-1":
+      result = -1;
+      state = "loss";
+      break;
+    default:
+      result = 0;
+      state = "flat";
+      break;
+  }
+
+  //收益计算
+  let result_profit: string;
+  switch (result_value) {
+    case "0.5":
+    case "1":
+      result_profit = Decimal(bet.value).sub(1).mul(result_value).toString();
+      break;
+    default:
+      result_profit = result_value;
+      break;
+  }
+
+  result_profit = Decimal(bet.amount)
+    .mul(result_profit)
+    .toDecimalPlaces(2)
+    .toString();
+
+  return {
+    state,
+    result,
+    result_profit,
+    text: state === "win" ? `+${result_profit}` : result_profit,
+  };
+};
+
+const emulateTotal = computed(() => {
+  if (!emulateScore.active) {
+    return {
+      state: "flat",
+      text: "0",
+    };
+  }
+  if (bets.value.length === 0) {
+    return {
+      state: "flat",
+      text: "0",
+    };
+  }
+  const result_profit = bets.value.reduce((prev, bet) => {
+    const result = getEmulateResult(bet);
+    return Decimal(prev)
+      .add(result?.result_profit ?? "0")
+      .toString();
+  }, "0");
+
+  let state: SettlementState;
+  if (Decimal(result_profit).gt(0)) {
+    state = "win";
+  } else if (Decimal(result_profit).lt(0)) {
+    state = "loss";
+  } else {
+    state = "flat";
+  }
+
+  return {
+    state,
+    text: state === "win" ? `+${result_profit}` : result_profit,
+  };
+});
 </script>
 
 <template>
   <view v-if="match" class="detail">
     <!-- 信息卡 -->
     <view class="info-card">
-      <text class="status" :class="match.state">{{
+      <text class="status" :class="match.state" @click="toggleEmulate">{{
         matchStatusText(match.state)
       }}</text>
       <view class="teams">
-        <text class="team">{{ match.team1_name }}</text>
+        <text class="team" @click="onClickTeam1">{{ match.team1_name }}</text>
         <text v-if="match.has_score && match.score1 !== null" class="score"
           >{{ match.score1 }} : {{ match.score2 }}</text
         >
+        <text v-else-if="emulateScore.active" class="score"
+          >{{ emulateScore.score1 }} : {{ emulateScore.score2 }}</text
+        >
         <text v-else class="vs">VS</text>
-        <text class="team team-right">{{ match.team2_name }}</text>
+        <text class="team team-right" @click="onClickTeam2">{{
+          match.team2_name
+        }}</text>
       </view>
       <text class="time">{{ formatMatchTime(match.match_time) }}</text>
     </view>
@@ -191,23 +347,25 @@ onShareAppMessage(() => {
       <text class="sec-title"><text class="bar gray" />投注记录</text>
     </view>
     <view class="records">
-      <view v-for="bet in bets" :key="bet.id" class="record">
+      <BetRecord
+        v-for="bet in bets"
+        :key="bet.id"
+        :bet="bet"
+        :match="match"
+        :emulate="getEmulateResult(bet)"
+        class="record-item"
+      />
+      <view
+        v-if="bets.length > 0 && emulateScore.active"
+        class="record-item emulate"
+      >
         <view class="rec-left">
-          <text class="rec-name">{{ bet.user?.name || "匿名" }}</text>
-          <text class="rec-odds">{{ recText(bet) }}</text>
+          <text class="rec-name">合计</text>
         </view>
         <view class="rec-right">
-          <template v-if="bet.result === null">
-            <text class="rec-settle" :class="settlement(bet).state">
-              {{ Number(bet.amount) }}
-            </text>
-          </template>
-          <template v-else>
-            <text class="rec-amount">{{ Number(bet.amount) }}</text>
-            <text class="rec-settle" :class="settlement(bet).state">
-              {{ Number(settlement(bet).text) }}
-            </text>
-          </template>
+          <text class="rec-settle" :class="emulateTotal.state">
+            {{ emulateTotal.text }}
+          </text>
         </view>
       </view>
       <view v-if="bets.length === 0" class="rec-empty">还没有人投注</view>
@@ -346,58 +504,55 @@ onShareAppMessage(() => {
   border-radius: 24rpx;
   overflow: hidden;
 }
-.record {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 22rpx 26rpx;
+
+.record-item {
   border-bottom: 2rpx solid $c-line;
+
+  &.emulate {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22rpx 26rpx;
+  }
+
+  .rec-left {
+    min-width: 0;
+    flex: 1;
+  }
+  .rec-name {
+    display: block;
+    font-size: 26rpx;
+    color: $c-text;
+  }
+
+  .rec-amount {
+    display: block;
+    font-size: 22rpx;
+    color: $c-text2;
+  }
+  .rec-settle {
+    display: block;
+    margin-top: 4rpx;
+    font-size: 28rpx;
+    font-weight: 500;
+  }
+  .rec-settle.win {
+    color: $c-green-bright;
+  }
+  .rec-settle.loss {
+    color: $c-red;
+  }
+  .rec-settle.pending,
+  .rec-settle.flat {
+    color: $c-text2;
+    font-weight: 400;
+  }
 }
-.record:last-child {
+
+.record-item:last-child {
   border-bottom: none;
 }
-.rec-left {
-  min-width: 0;
-  flex: 1;
-}
-.rec-name {
-  display: block;
-  font-size: 26rpx;
-  color: $c-text;
-}
-.rec-odds {
-  display: block;
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  color: $c-text2;
-}
-.rec-right {
-  text-align: right;
-  flex-shrink: 0;
-  margin-left: 16rpx;
-}
-.rec-amount {
-  display: block;
-  font-size: 22rpx;
-  color: $c-text2;
-}
-.rec-settle {
-  display: block;
-  margin-top: 4rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-}
-.rec-settle.win {
-  color: $c-green-bright;
-}
-.rec-settle.loss {
-  color: $c-red;
-}
-.rec-settle.pending,
-.rec-settle.flat {
-  color: $c-text2;
-  font-weight: 400;
-}
+
 .rec-empty {
   text-align: center;
   color: $c-text2;

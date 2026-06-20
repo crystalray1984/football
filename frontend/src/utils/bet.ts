@@ -130,7 +130,7 @@ export function settlement(bet: { result_profit: string | null }): {
     return { state: "pending", text: "待结算" };
   }
   const p = new Decimal(bet.result_profit);
-  if (p.gt(0)) return { state: "win", text: "+" + p.toFixed(2) };
-  if (p.lt(0)) return { state: "loss", text: p.toFixed(2) };
-  return { state: "flat", text: p.toFixed(2) };
+  if (p.gt(0)) return { state: "win", text: "+" + p.toString() };
+  if (p.lt(0)) return { state: "loss", text: p.toString() };
+  return { state: "flat", text: p.toString() };
 }

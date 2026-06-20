@@ -10,6 +10,10 @@ export function setToken(value: string) {
   token.value = value;
 }
 
+export function getToken() {
+  return token.value;
+}
+
 export interface ApiOptions {
   url: string;
   method?: "GET" | "POST";
