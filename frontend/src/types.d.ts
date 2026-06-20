@@ -98,3 +98,15 @@ declare interface BetRecord {
   /** 投注人 */
   user?: { name: string };
 }
+
+/**
+ * "我的"页投注记录（投注记录 + 所属比赛信息）
+ */
+declare interface MyBet extends BetRecord {
+  match: {
+    id: number;
+    team1_name: string;
+    team2_name: string;
+    match_time: string;
+  };
+}
