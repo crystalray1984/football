@@ -115,7 +115,7 @@
 - **盘口组**：展示被点击的那一组（让球的两个方向 / 胜平负的三个方向），当前选中方向绿色高亮 + ✓，可在组内切换方向。
 - **投注金额**：数字输入（`type="number"` 唤起数字键盘），左侧 `¥`，右侧提示"限 50 - 500"。仅接受整数——实时剥除小数点/非法字符并 `parseInt`，与快捷金额双向同步。
 - 快捷金额：`50 / 100 / 200 / 500`，点选回填并高亮（绿描边）。
-- **预计可赢**：让球＝`本金 × 水位`；胜平负＝`本金 × (赔率 − 1)`；用 `decimal.js` 计算并保留 2 位（如 `¥95.00`）。金额为空时显示 `¥0.00`。
+- **预计可赢**：`本金 × (欧赔 − 1)`（= 本金 × 亚赔），所有盘口统一；用 `decimal.js` 计算并保留 2 位（如 `¥95.00`）。金额为空时显示 `¥0.00`。
 - **确认投注**按钮（整宽，绿底 `#19c37d`）：金额合法才可点。
 
 行为：
@@ -138,15 +138,15 @@
 
 | type | 按钮标题 | 记录盘口文案 |
 |------|----------|--------------|
-| ah1 | `{team1} {fmt(ah_condition)}` | `让球 {team1} {fmt(condition)} @{value}` |
-| ah2 | `{team2} {fmt(-ah_condition)}` | `让球 {team2} {fmt(condition)} @{value}` |
-| win1 | `{team1}` | `{team1} 胜 @{value}` |
-| draw | `平局` | `平局 @{value}` |
-| win2 | `{team2}` | `{team2} 胜 @{value}` |
+| ah1 | `{team1} {fmt(ah_condition)}` | `让球 {team1} {fmt(condition)} @{亚赔}` |
+| ah2 | `{team2} {fmt(-ah_condition)}` | `让球 {team2} {fmt(condition)} @{亚赔}` |
+| win1 | `{team1}` | `{team1} 胜 @{亚赔}` |
+| draw | `平局` | `平局 @{亚赔}` |
+| win2 | `{team2}` | `{team2} 胜 @{亚赔}` |
 
-预计可赢：
-- 让球（ah1/ah2）：`profit = amount × value`
-- 胜平负（win1/win2/draw）：`profit = amount × (value − 1)`
+赔率口径：后端所有 `*_value`（含让球水位 `ah1_value`/`ah2_value`）均为**欧赔**（含本金）。前端**一律以亚赔展示**：`亚赔 = displayOdds(value) = 欧赔 − 1`（`toFixed(2)`），应用于让球/胜平负按钮与记录 `@赔率`。仅改展示，下注 `condition`/`amount` 与落库数据不变。
+
+预计可赢（所有盘口统一）：`profit = amount × (value − 1)`（= amount × 亚赔）。
 
 金额展示：`¥` + 两位小数（`decimal.js` → `toFixed(2)`）。
 
