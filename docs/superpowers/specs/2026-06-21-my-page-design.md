@@ -73,7 +73,7 @@
   - 若 `getToken()` 为空 → 合计收益 `0`、列表为空、**不发请求**。
   - 否则 `GET /api/my/bets`；加载中显示「加载中…」，网络异常 toast「网络异常，请重试」（与详情页一致）。
 - 布局（自上而下）：
-  1. **合计收益**：大号数字。正数显示 `+` 且绿色（`$c-green-bright`），负数红色（`$c-red`），`0` 中性色；金额用 `formatMoney` 两位小数。
+  1. **合计收益**：大号数字。正数显示 `+` 且绿色（`$c-green-bright`），负数红色（`$c-red`），`0` 中性色；金额用 `formatMoney`（最多两位小数，见 F 节）。
   2. **小字说明**（仅当存在未结算投注时）：「未结算 N 笔不计入」。
   3. **记录列表**：`MyBetRecord` 循环。
   4. **空状态**：「暂无投注记录」。
@@ -109,6 +109,14 @@
   }
   ```
 
+### F. 金额展示格式（统一）
+
+- **金额**统一为「最多两位小数」：四舍五入到 2 位后去掉末尾多余的 0（如 `95` → `95`、`95.50` → `95.5`、`95.555` → `95.56`、`0` → `0`）。
+- `formatMoney` 作为金额格式的**唯一来源**：`new Decimal(amount).toDecimalPlaces(2).toString()`。`settlement`（结算净盈亏）与 `potentialWin`（预计可赢）改为复用 `formatMoney`。
+- **赔率/水位不受此规则约束**：`displayOdds` 保持固定两位小数（`@0.95`、`@1.10`）。
+- 受影响展示位：「我的」页合计收益、详情页/「我的」页结算文案、投注弹层「预计可赢」。
+- 已合规、无需改动：详情页 admin 模拟收益（已用 `toDecimalPlaces(2).toString()`）、`Number(bet.amount)`（投注额为整数）。
+
 ## 边界情况
 
 - **未登录 / 未注册**：`getToken()` 为空 → 显示 `0`、空列表、不发请求。
@@ -129,8 +137,10 @@
 - `frontend/src/pages.json`（新增 tabBar + 注册新页）
 - `frontend/src/pages/my/index.vue`（新建）
 - `frontend/src/pages/my/MyBetRecord.vue`（新建）
-- `frontend/src/utils/bet.ts`（新增 `sumSettledProfit`）
-- `frontend/src/utils/bet.test.ts`（新增用例）
+- `frontend/src/utils/format.ts`（`formatMoney` 改为最多两位小数）
+- `frontend/src/utils/format.test.ts`（更新 `formatMoney` 用例）
+- `frontend/src/utils/bet.ts`（`settlement`/`potentialWin` 复用 `formatMoney`；新增 `sumSettledProfit`）
+- `frontend/src/utils/bet.test.ts`（更新 `settlement`/`potentialWin` 用例，新增 `sumSettledProfit` 用例）
 - `frontend/src/types.d.ts`（新增 `MyBet`）
 - `frontend/src/static/tabbar/*.png`（4 张图标）
 
