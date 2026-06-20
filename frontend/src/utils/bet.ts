@@ -134,3 +134,21 @@ export function settlement(bet: { result_profit: string | null }): {
   if (p.lt(0)) return { state: "loss", text: formatMoney(p) };
   return { state: "flat", text: formatMoney(p) };
 }
+
+/**
+ * 合计已结算投注的净盈亏；未结算（result_profit == null）不计入。
+ * 返回精确的十进制字符串（如 "45"、"30.75"、"-20"、"0"）。
+ */
+export function sumSettledProfit(
+  bets: { result_profit: string | null }[],
+): string {
+  return bets
+    .reduce(
+      (acc, b) =>
+        b.result_profit === null || b.result_profit === undefined
+          ? acc
+          : acc.add(b.result_profit),
+      new Decimal(0),
+    )
+    .toString();
+}

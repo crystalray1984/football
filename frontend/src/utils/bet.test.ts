@@ -9,6 +9,7 @@ import {
   potentialWin,
   recordOddsText,
   settlement,
+  sumSettledProfit,
   validateAmount,
 } from "./bet";
 
@@ -95,4 +96,29 @@ describe("settlement", () => {
     expect(settlement({ result_profit: "95.50" })).toEqual({ state: "win", text: "+95.5" }));
   it("超过两位四舍五入", () =>
     expect(settlement({ result_profit: "95.555" })).toEqual({ state: "win", text: "+95.56" }));
+});
+
+describe("sumSettledProfit", () => {
+  it("空列表为 0", () => expect(sumSettledProfit([])).toBe("0"));
+  it("仅未结算（null）不计入，结果 0", () =>
+    expect(
+      sumSettledProfit([{ result_profit: null }, { result_profit: null }]),
+    ).toBe("0"));
+  it("混合：跳过未结算，累加已结算净盈亏", () =>
+    expect(
+      sumSettledProfit([
+        { result_profit: "95" },
+        { result_profit: null },
+        { result_profit: "-50" },
+        { result_profit: "0" },
+      ]),
+    ).toBe("45"));
+  it("小数累加精确", () =>
+    expect(
+      sumSettledProfit([{ result_profit: "10.5" }, { result_profit: "20.25" }]),
+    ).toBe("30.75"));
+  it("净亏损为负", () =>
+    expect(
+      sumSettledProfit([{ result_profit: "10" }, { result_profit: "-30" }]),
+    ).toBe("-20"));
 });
