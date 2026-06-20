@@ -263,13 +263,21 @@ async function getMatchBets(req: FastifyRequest, reply: FastifyReply) {
  * 投注
  */
 async function bet(req: FastifyRequest, reply: FastifyReply) {
-  const { match_id, type, amount, condition, openid } = req.body as {
-    openid: string;
+  const { match_id, type, amount, condition } = req.body as {
     match_id: number;
     type: "ah1" | "ah2" | "win1" | "win2" | "draw";
     amount: number;
     condition: string;
   };
+  const openid = req.headers.token as string;
+
+  if (!openid) {
+    reply.send({
+      code: -1,
+      msg: "未登录",
+    });
+    return;
+  }
 
   if (!isNaN(match_id) || match_id <= 0 || !Number.isSafeInteger(match_id)) {
     reply.send({
@@ -320,7 +328,7 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
   if (type === "ah1") {
     if (!Decimal(match.ah_condition).eq(condition)) {
       reply.send({
-        code: -1,
+        code: -2,
         msg: "比赛盘口已变化，重新下注",
       });
       return;
@@ -329,7 +337,7 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
   } else if (type === "ah2") {
     if (!Decimal(0).sub(match.ah_condition).eq(condition)) {
       reply.send({
-        code: -1,
+        code: -2,
         msg: "比赛盘口已变化，重新下注",
       });
       return;
