@@ -72,6 +72,7 @@ const openBet = (type: BetType) => {
 const onConfirm = async (payload: { type: BetType; amount: number }) => {
   const m = match.value;
   if (!m) return;
+  uni.showLoading();
   const ret = await api({
     url: "/api/bet",
     method: "POST",
