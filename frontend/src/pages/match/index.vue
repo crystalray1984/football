@@ -4,8 +4,8 @@ import {
   betCondition,
   directionLabel,
   displayOdds,
+  getBetResult,
   oddsValue,
-  recordOddsText,
   SettlementState,
   type BetType,
 } from "@/utils/bet";
@@ -141,95 +141,9 @@ const onClickTeam2 = () => {
   emulateScore.score2++;
 };
 
-const compareScore = (
-  score1: Decimal.Value,
-  score2: Decimal.Value,
-): "-0.5" | "-1" | "0" | "0.5" | "1" => {
-  //给作为比对的结果加上盘口
-  const delta = Decimal(score1).sub(score2);
-  if (delta.eq("0")) return "0";
-  if (delta.gte("0.5")) {
-    return "1";
-  }
-  if (delta.gte("0.25")) {
-    return "0.5";
-  }
-  if (delta.lte("-0.5")) {
-    return "-1";
-  }
-  if (delta.lte("-0.25")) {
-    return "-0.5";
-  }
-  return "0";
-};
-
 const getEmulateResult = (bet: BetRecord) => {
-  if (!match.value) return;
   if (!emulateScore.active) return;
-  let result_value: string;
-  if (bet.type === "ah1") {
-    result_value = compareScore(
-      Decimal(emulateScore.score1).add(bet.condition),
-      emulateScore.score2,
-    );
-  } else if (bet.type === "ah2") {
-    //让球，买客队
-    result_value = compareScore(
-      Decimal(emulateScore.score2).add(bet.condition),
-      emulateScore.score1,
-    );
-  } else if (bet.type === "win1") {
-    result_value = emulateScore.score1 > emulateScore.score2 ? "1" : "-1";
-  } else if (bet.type === "win2") {
-    result_value = emulateScore.score1 < emulateScore.score2 ? "1" : "-1";
-  } else {
-    result_value = emulateScore.score1 === emulateScore.score2 ? "1" : "-1";
-  }
-
-  let result: number;
-
-  //胜负计算
-  let state: SettlementState;
-  switch (result_value) {
-    case "0.5":
-    case "1":
-      result = 1;
-      state = "win";
-      break;
-    case "-0.5":
-    case "-1":
-      result = -1;
-      state = "loss";
-      break;
-    default:
-      result = 0;
-      state = "flat";
-      break;
-  }
-
-  //收益计算
-  let result_profit: string;
-  switch (result_value) {
-    case "0.5":
-    case "1":
-      result_profit = Decimal(bet.value).sub(1).mul(result_value).toString();
-      break;
-    default:
-      result_profit = result_value;
-      break;
-  }
-
-  result_profit = Decimal(bet.amount)
-    .mul(result_profit)
-    .toDecimalPlaces(2)
-    .toString();
-
-  return {
-    state,
-    result,
-    result_profit,
-    text: state === "win" ? `+${result_profit}` : result_profit,
-  };
+  return getBetResult(bet, emulateScore.score1, emulateScore.score2);
 };
 
 const emulateTotal = computed(() => {
@@ -246,9 +160,9 @@ const emulateTotal = computed(() => {
     };
   }
   const result_profit = bets.value.reduce((prev, bet) => {
-    const result = getEmulateResult(bet);
+    const result = getBetResult(bet, emulateScore.score1, emulateScore.score2);
     return Decimal(prev)
-      .add(result?.result_profit ?? "0")
+      .add(result.result_profit ?? "0")
       .toString();
   }, "0");
 

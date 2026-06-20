@@ -152,3 +152,103 @@ export function sumSettledProfit(
     )
     .toString();
 }
+
+export function getBetResult(
+  bet: Pick<BetRecord, "condition" | "amount" | "type" | "value">,
+  score1: number,
+  score2: number,
+) {
+  let result_value: string;
+
+  //确认投注类型
+  if (bet.type === "ah1") {
+    //让球，买主队
+    result_value = compareScore(Decimal(score1).add(bet.condition), score2);
+  } else if (bet.type === "ah2") {
+    //让球，买客队
+    result_value = compareScore(Decimal(score2).add(bet.condition), score1);
+  } else if (bet.type === "win1") {
+    result_value = score1 > score2 ? "1" : "-1";
+  } else if (bet.type === "win2") {
+    result_value = score1 < score2 ? "1" : "-1";
+  } else {
+    result_value = score1 === score2 ? "1" : "-1";
+  }
+
+  //胜负计算
+  let state: SettlementState;
+  switch (result_value) {
+    case "0.5":
+    case "1":
+      state = "win";
+      break;
+    case "-0.5":
+    case "-1":
+      state = "loss";
+      break;
+    default:
+      state = "flat";
+      break;
+  }
+
+  let result_profit: string;
+
+  //收益计算
+  switch (result_value) {
+    case "0.5":
+    case "1":
+      result_profit = Decimal(bet.value)
+        .sub(1)
+        .mul(result_value)
+        .mul(bet.amount)
+        .toDecimalPlaces(2)
+        .toString();
+      break;
+    default:
+      result_profit = Decimal(result_value)
+        .mul(bet.amount)
+        .toDecimalPlaces(2)
+        .toString();
+      break;
+  }
+
+  let text: string;
+  if (state === "win") {
+    text = `+${result_profit}`;
+  } else {
+    text = result_profit;
+  }
+
+  return {
+    state,
+    result_profit,
+    text,
+  };
+}
+
+/**
+ * 进行比分对比
+ * @param score1
+ * @param score2
+ */
+export function compareScore(
+  score1: Decimal.Value,
+  score2: Decimal.Value,
+): "-0.5" | "-1" | "0" | "0.5" | "1" {
+  //给作为比对的结果加上盘口
+  const delta = Decimal(score1).sub(score2);
+  if (delta.eq("0")) return "0";
+  if (delta.gte("0.5")) {
+    return "1";
+  }
+  if (delta.gte("0.25")) {
+    return "0.5";
+  }
+  if (delta.lte("-0.5")) {
+    return "-1";
+  }
+  if (delta.lte("-0.25")) {
+    return "-0.5";
+  }
+  return "0";
+}
