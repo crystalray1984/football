@@ -187,10 +187,17 @@ onUnload(() => clearInterval(timer));
           <text class="rec-odds">{{ recText(bet) }}</text>
         </view>
         <view class="rec-right">
-          <text class="rec-amount">投 ¥{{ bet.amount }}</text>
-          <text class="rec-settle" :class="settlement(bet).state">
-            {{ settlement(bet).text }}
-          </text>
+          <template v-if="bet.result === null">
+            <text class="rec-settle" :class="settlement(bet).state">
+              {{ bet.amount }}
+            </text>
+          </template>
+          <template v-else>
+            <text class="rec-amount">{{ bet.amount }}</text>
+            <text class="rec-settle" :class="settlement(bet).state">
+              {{ settlement(bet).text }}
+            </text>
+          </template>
         </view>
       </view>
       <view v-if="bets.length === 0" class="rec-empty">还没有人投注</view>

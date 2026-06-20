@@ -1,6 +1,6 @@
 import {} from "@dcloudio/uni-app";
 
-const API_BASE = "http://127.0.0.1:10030";
+const API_BASE = "https://ft.188zq.vip";
 
 const token = {
   value: "",
