@@ -44,9 +44,10 @@ describe("displayOdds", () => {
 });
 
 describe("potentialWin", () => {
-  it("让球：本金×(欧赔-1)", () => expect(potentialWin(100, "1.95")).toBe("95.00"));
-  it("胜平负：本金×(欧赔-1)", () => expect(potentialWin(100, "2.10")).toBe("110.00"));
-  it("空金额为0", () => expect(potentialWin(0, "2.10")).toBe("0.00"));
+  it("让球：本金×(欧赔-1)", () => expect(potentialWin(100, "1.95")).toBe("95"));
+  it("胜平负：本金×(欧赔-1)", () => expect(potentialWin(100, "2.10")).toBe("110"));
+  it("空金额为 0", () => expect(potentialWin(0, "2.10")).toBe("0"));
+  it("最多两位小数", () => expect(potentialWin(150, "1.333")).toBe("49.95"));
 });
 
 describe("betCondition", () => {
@@ -84,10 +85,14 @@ describe("recordOddsText", () => {
 describe("settlement", () => {
   it("未结算", () =>
     expect(settlement({ result_profit: null })).toEqual({ state: "pending", text: "待结算" }));
-  it("盈利", () =>
-    expect(settlement({ result_profit: "95" })).toEqual({ state: "win", text: "+95.00" }));
+  it("盈利（带 +）", () =>
+    expect(settlement({ result_profit: "95" })).toEqual({ state: "win", text: "+95" }));
   it("亏损", () =>
-    expect(settlement({ result_profit: "-50" })).toEqual({ state: "loss", text: "-50.00" }));
+    expect(settlement({ result_profit: "-50" })).toEqual({ state: "loss", text: "-50" }));
   it("持平", () =>
-    expect(settlement({ result_profit: "0" })).toEqual({ state: "flat", text: "0.00" }));
+    expect(settlement({ result_profit: "0" })).toEqual({ state: "flat", text: "0" }));
+  it("去掉末尾 0", () =>
+    expect(settlement({ result_profit: "95.50" })).toEqual({ state: "win", text: "+95.5" }));
+  it("超过两位四舍五入", () =>
+    expect(settlement({ result_profit: "95.555" })).toEqual({ state: "win", text: "+95.56" }));
 });
