@@ -119,8 +119,8 @@
 - **确认投注**按钮（整宽，绿底 `#19c37d`）：金额合法才可点。
 
 行为：
-- 弹层打开时对盘口取快照（`condition`/`value` 固定），下注用快照值；轮询不改动弹层内已展示赔率。
-- 确认 → `POST /api/bet`，body：`{ match_id, type, amount, condition }`。
+- **轮询源在详情页**（页面每 10s 刷新 `match`）。弹层不持有盘口数据，直接读页面的 `match`（reactive prop），盘口/赔率/预计可赢随页面实时更新；弹层只产出投注意图，不做快照。
+- 确认 → 弹层 emit `{ type, amount }` → 页面用**实时 `match`** 计算 `condition` 后 `POST /api/bet`，body：`{ match_id, type, amount, condition }`。
   - `type` ∈ `ah1 | ah2 | win1 | win2 | draw`。
   - `condition`：`ah1`＝`ah_condition`；`ah2`＝`String(-ah_condition)`（与后端校验一致）；`win1/win2/draw`＝`"0"`（后端不校验，仅占位落库；因 `Bet.condition` 为 DECIMAL 列，不可传空串）。
   - `amount`：整数。
