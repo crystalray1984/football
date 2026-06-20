@@ -31,9 +31,10 @@ const submit = async () => {
   });
 
   if (ret.code) {
+    uni.hideLoading();
     uni.showToast({
       title: ret.msg,
-      icon: "fail",
+      icon: "none",
     });
     return;
   }
@@ -48,77 +49,92 @@ const submit = async () => {
   setTimeout(() => emit("success"), 1500);
 };
 </script>
+
 <template>
-  <view class="login-frame">
-    <view class="nickname-wrapper">
-      <input
-        v-model="nickname"
-        type="nickname"
-        class="nickname-input"
-        placeholder="输入姓名，不填真名不结账"
-      />
+  <view class="login">
+    <view class="brand">
+      <view class="badge"><text class="badge-text">球</text></view>
+      <text class="title">足球竞猜</text>
+      <text class="subtitle">输入姓名，进入今日盘口</text>
     </view>
 
-    <view class="btn-box">
-      <button class="btn-submit" @click="submit">进入</button>
+    <view class="form">
+      <view class="field">
+        <input
+          v-model="nickname"
+          type="nickname"
+          class="name-input"
+          placeholder="输入姓名，不填真名不结账"
+          placeholder-style="color: #5d6b85"
+        />
+      </view>
+      <view class="btn-enter" @click="submit">进入</view>
     </view>
   </view>
 </template>
+
 <style lang="scss" scoped>
-.login-frame {
+@import "../../styles/tokens.scss";
+
+.login {
+  padding: 140rpx 48rpx 0;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 72rpx;
+}
+.badge {
+  width: 120rpx;
+  height: 120rpx;
+  margin: 0 auto 28rpx;
+  border-radius: 32rpx;
+  background: rgba(25, 195, 125, 0.16);
+  border: 2rpx solid $c-green;
   display: flex;
-  flex-direction: column;
-  padding: 40rpx 0;
-  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
+.badge-text {
+  font-size: 56rpx;
+  font-weight: 500;
+  color: $c-green-bright;
+}
+.title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 500;
+  color: $c-text;
+}
+.subtitle {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: $c-text2;
 }
 
-.avatar-wrapper {
-  border: 0 none;
-  padding: 0;
-  margin: 0;
-  width: 200rpx;
-  height: 200rpx;
-  border: 0 none;
-  align-self: center;
-
-  .avatar {
-    width: 200rpx;
-    height: 200rpx;
-    border: 0 none;
-    display: block;
-  }
+.form {
+  margin-top: 20rpx;
 }
-
-.avatar-tip {
-  margin-top: 10rpx;
-  font-size: 24rpx;
+.field {
+  background: $c-card;
+  border: 2rpx solid $c-line2;
+  border-radius: 16rpx;
+  padding: 6rpx 28rpx;
+  margin-bottom: 28rpx;
+}
+.name-input {
+  height: 88rpx;
+  font-size: 30rpx;
+  color: $c-text;
+}
+.btn-enter {
   text-align: center;
-}
-
-.nickname-wrapper {
-  border-top: 1rpx solid #ebedf0;
-  border-bottom: 1rpx solid #ebedf0;
-  margin-top: 60rpx;
-}
-
-.nickname-input {
-  text-align: center;
-  height: 80rpx;
-  background-color: #fff;
-}
-
-.btn-box {
-  position: relative;
-  margin: 60rpx 40rpx;
-
-  .btn-submit {
-    position: relative;
-    color: #fff;
-    background-color: #1989fa;
-    border: 1rpx solid #1989fa;
-    flex-shrink: 0;
-    display: block;
-    width: 100%;
-  }
+  background: $c-green;
+  color: #06231a;
+  font-size: 32rpx;
+  font-weight: 500;
+  border-radius: 20rpx;
+  padding: 26rpx;
 }
 </style>
