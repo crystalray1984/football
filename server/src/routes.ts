@@ -260,6 +260,41 @@ async function getMatchBets(req: FastifyRequest, reply: FastifyReply) {
 }
 
 /**
+ * 获取当前用户的投注记录（含比赛信息）
+ */
+async function getMyBets(req: FastifyRequest, reply: FastifyReply) {
+  const openid = req.headers.token as string;
+
+  if (!openid) {
+    reply.send({
+      code: 0,
+      data: [],
+    });
+    return;
+  }
+
+  const bets = await Bet.findAll({
+    where: { openid },
+    include: [
+      {
+        model: Match,
+        as: "match",
+        attributes: ["id", "team1_name", "team2_name", "match_time"],
+        // INNER JOIN：保证每条记录都带得到比赛，避免前端 bet.match 为 null 崩溃。
+        // v_f_match 视图保留全部比赛（含已结束），正常不会丢记录。
+        required: true,
+      },
+    ],
+    order: [["id", "desc"]],
+  });
+
+  reply.send({
+    code: 0,
+    data: bets,
+  });
+}
+
+/**
  * 投注
  */
 async function bet(req: FastifyRequest, reply: FastifyReply) {
@@ -401,5 +436,6 @@ export default function routes(app: FastifyInstance) {
   app.get("/api/match/list", getMatchList);
   app.get("/api/match/detail", getMatchDetail);
   app.get("/api/match/bets", getMatchBets);
+  app.get("/api/my/bets", getMyBets);
   app.post("/api/bet", bet);
 }
