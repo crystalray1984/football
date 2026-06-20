@@ -70,7 +70,7 @@ import {
   /**
    * 用户信息
    */
-  @BelongsTo(() => User, "openid")
+  @BelongsTo(() => User, { foreignKey: "openid", targetKey: "openid", as: "user" })
   declare user?: User;
 ```
 
@@ -119,6 +119,18 @@ import {
 
 ```ts
   app.get("/api/match/bets", getMatchBets);
+```
+
+`getMatchBets` 里把 `include: [User]` 改为带别名形式，保证序列化出来的 key 是 `user`（与 Bet.ts 的 `as:"user"` 一致），否则前端 `bet.user?.name` 取不到：
+
+```ts
+  const bets = await Bet.findAll({
+    where: {
+      match_id,
+    },
+    include: [{ model: User, as: "user" }],
+    order: [["id", "desc"]],
+  });
 ```
 
 - [ ] **Step 3: 类型检查通过**
@@ -730,10 +742,10 @@ function onTap() {
 </template>
 
 <style lang="scss" scoped>
-@import "@/styles/tokens.scss";
+@import "../../styles/tokens.scss";
 
 .odds-btn {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   position: relative;
   background: $c-odds;
@@ -762,11 +774,13 @@ function onTap() {
 }
 
 .label {
+  width: 100%;
   font-size: 24rpx;
   line-height: 1.25;
   color: $c-text2;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* autoprefixer: ignore next */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -876,7 +890,7 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-@import "@/styles/tokens.scss";
+@import "../../styles/tokens.scss";
 
 .match-list {
   padding: 24rpx;
@@ -996,6 +1010,7 @@ import { computed, ref, watch } from "vue";
 import OddsButton from "./OddsButton.vue";
 import { formatHandicap } from "@/utils/format";
 import {
+  betCondition,
   directionLabel,
   isAsian,
   oddsValue,
@@ -1013,13 +1028,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
-  confirm: [{ type: BetType; amount: number }];
+  confirm: [{ type: BetType; amount: number; condition: string }];
 }>();
 
 const quickAmounts = [50, 100, 200, 500];
 
 const selected = ref<BetType>(props.type);
 const amountInput = ref("");
+// 打开弹层时对盘口做快照：轮询不改动弹层内已展示赔率，下注也用快照值（盘口变化交后端 -2 兜底）
+const snap = ref<MatchDetail>(props.match);
 
 watch(
   () => props.visible,
@@ -1027,6 +1044,7 @@ watch(
     if (v) {
       selected.value = props.type;
       amountInput.value = "";
+      snap.value = JSON.parse(JSON.stringify(props.match));
     }
   },
 );
@@ -1040,14 +1058,14 @@ const isAh = computed(() => isAsian(props.type));
 const amount = computed(() => parseInt(amountInput.value || "0", 10) || 0);
 const valid = computed(() => validateAmount(amount.value));
 const win = computed(() =>
-  potentialWin(selected.value, amount.value, oddsValue(selected.value, props.match)),
+  potentialWin(selected.value, amount.value, oddsValue(selected.value, snap.value)),
 );
 
 const subtitle = computed(() => {
-  const base = `${props.match.team1_name} VS ${props.match.team2_name}`;
+  const base = `${snap.value.team1_name} VS ${snap.value.team2_name}`;
   if (isAh.value) {
-    return `${base} · 让球 ${props.match.team1_name} ${formatHandicap(
-      props.match.ah_condition,
+    return `${base} · 让球 ${snap.value.team1_name} ${formatHandicap(
+      snap.value.ah_condition,
     )}`;
   }
   return base;
@@ -1060,14 +1078,19 @@ function pick(v: number) {
   amountInput.value = String(v);
 }
 function confirm() {
-  if (valid.value) emit("confirm", { type: selected.value, amount: amount.value });
+  if (!valid.value) return;
+  emit("confirm", {
+    type: selected.value,
+    amount: amount.value,
+    condition: betCondition(selected.value, snap.value),
+  });
 }
 
 function btnLabel(t: BetType): string {
-  return directionLabel(t, props.match);
+  return directionLabel(t, snap.value);
 }
 function btnValue(t: BetType): string {
-  return oddsValue(t, props.match);
+  return oddsValue(t, snap.value);
 }
 </script>
 
@@ -1083,14 +1106,14 @@ function btnValue(t: BetType): string {
       <text class="subtitle">{{ subtitle }}</text>
 
       <view class="group" :class="{ three: !isAh }">
-        <OddsButton
-          v-for="t in group"
-          :key="t"
-          :label="btnLabel(t)"
-          :value="btnValue(t)"
-          :selected="selected === t"
-          @click="selected = t"
-        />
+        <view v-for="t in group" :key="t" class="cell">
+          <OddsButton
+            :label="btnLabel(t)"
+            :value="btnValue(t)"
+            :selected="selected === t"
+            @click="selected = t"
+          />
+        </view>
       </view>
 
       <text class="field-label">投注金额</text>
@@ -1101,7 +1124,7 @@ function btnValue(t: BetType): string {
           type="number"
           :value="amountInput"
           placeholder="50 - 500"
-          placeholder-class="ph"
+          placeholder-style="color: #5d6b85"
           @input="onInput"
         />
         <text class="limit">限 50 - 500</text>
@@ -1132,7 +1155,7 @@ function btnValue(t: BetType): string {
 </template>
 
 <style lang="scss" scoped>
-@import "@/styles/tokens.scss";
+@import "../../styles/tokens.scss";
 
 .sheet-mask {
   position: fixed;
@@ -1188,6 +1211,10 @@ function btnValue(t: BetType): string {
   gap: 20rpx;
   margin-bottom: 36rpx;
 }
+.cell {
+  flex: 1;
+  min-width: 0;
+}
 
 .field-label {
   display: block;
@@ -1215,9 +1242,6 @@ function btnValue(t: BetType): string {
   font-size: 38rpx;
   font-weight: 500;
   color: $c-text;
-}
-.ph {
-  color: $c-text3;
 }
 .limit {
   font-size: 22rpx;
@@ -1304,7 +1328,6 @@ import OddsButton from "./OddsButton.vue";
 import BetSheet from "./BetSheet.vue";
 import { formatHandicap, formatMatchTime, matchStatusText } from "@/utils/format";
 import {
-  betCondition,
   directionLabel,
   oddsValue,
   recordOddsText,
@@ -1321,7 +1344,7 @@ const sheetType = ref<BetType>("ah1");
 
 let timer: any;
 
-const load = async () => {
+const refresh = async () => {
   if (!matchId.value) return;
   try {
     const [d, b] = await Promise.all([
@@ -1336,16 +1359,20 @@ const load = async () => {
     }
     match.value = d.data;
     if (b.code === 0) bets.value = b.data;
-    startPolling();
   } catch (e) {
     uni.showToast({ title: "网络异常，请重试", icon: "none" });
   }
 };
 
-const startPolling = () => {
+const startTimer = () => {
   clearInterval(timer);
-  if (match.value?.state === "end") return;
-  timer = setInterval(load, 10000);
+  timer = setInterval(() => {
+    if (match.value?.state === "end") {
+      clearInterval(timer);
+      return;
+    }
+    refresh();
+  }, 10000);
 };
 
 const canBet = () => match.value?.state === "pending";
@@ -1356,7 +1383,11 @@ const openBet = (type: BetType) => {
   sheetVisible.value = true;
 };
 
-const onConfirm = async (payload: { type: BetType; amount: number }) => {
+const onConfirm = async (payload: {
+  type: BetType;
+  amount: number;
+  condition: string;
+}) => {
   const m = match.value;
   if (!m) return;
   const ret = await api({
@@ -1366,16 +1397,16 @@ const onConfirm = async (payload: { type: BetType; amount: number }) => {
       match_id: m.id,
       type: payload.type,
       amount: payload.amount,
-      condition: betCondition(payload.type, m),
+      condition: payload.condition,
     },
   });
   if (ret.code === 0) {
     sheetVisible.value = false;
     uni.showToast({ title: "投注成功", icon: "success" });
-    load();
+    refresh();
   } else if (ret.code === -2) {
     uni.showToast({ title: "盘口已变化，请重新下注", icon: "none" });
-    load();
+    refresh();
   } else {
     uni.showToast({ title: ret.msg || "投注失败", icon: "none" });
   }
@@ -1390,7 +1421,10 @@ const recText = (bet: BetRecord) =>
 onLoad((query) => {
   matchId.value = Number(query?.match_id) || 0;
 });
-onShow(() => load());
+onShow(() => {
+  refresh();
+  startTimer();
+});
 onHide(() => clearInterval(timer));
 onUnload(() => clearInterval(timer));
 </script>
@@ -1419,8 +1453,8 @@ onUnload(() => clearInterval(timer));
       <text class="sec-sub">让球 {{ match.team1_name }} {{ formatHandicap(match.ah_condition) }}</text>
     </view>
     <view class="market">
-      <OddsButton :label="label('ah1')" :value="odds('ah1')" :disabled="!canBet()" @click="openBet('ah1')" />
-      <OddsButton :label="label('ah2')" :value="odds('ah2')" :disabled="!canBet()" @click="openBet('ah2')" />
+      <view class="cell"><OddsButton :label="label('ah1')" :value="odds('ah1')" :disabled="!canBet()" @click="openBet('ah1')" /></view>
+      <view class="cell"><OddsButton :label="label('ah2')" :value="odds('ah2')" :disabled="!canBet()" @click="openBet('ah2')" /></view>
     </view>
 
     <!-- 胜平负 -->
@@ -1429,9 +1463,9 @@ onUnload(() => clearInterval(timer));
         <text class="sec-title"><text class="bar" />胜平负</text>
       </view>
       <view class="market three">
-        <OddsButton :label="label('win1')" :value="odds('win1')" :disabled="!canBet()" @click="openBet('win1')" />
-        <OddsButton :label="label('draw')" :value="odds('draw')" :disabled="!canBet()" @click="openBet('draw')" />
-        <OddsButton :label="label('win2')" :value="odds('win2')" :disabled="!canBet()" @click="openBet('win2')" />
+        <view class="cell"><OddsButton :label="label('win1')" :value="odds('win1')" :disabled="!canBet()" @click="openBet('win1')" /></view>
+        <view class="cell"><OddsButton :label="label('draw')" :value="odds('draw')" :disabled="!canBet()" @click="openBet('draw')" /></view>
+        <view class="cell"><OddsButton :label="label('win2')" :value="odds('win2')" :disabled="!canBet()" @click="openBet('win2')" /></view>
       </view>
     </template>
 
@@ -1468,7 +1502,7 @@ onUnload(() => clearInterval(timer));
 </template>
 
 <style lang="scss" scoped>
-@import "@/styles/tokens.scss";
+@import "../../styles/tokens.scss";
 
 .detail {
   padding: 24rpx;
@@ -1576,6 +1610,10 @@ onUnload(() => clearInterval(timer));
   display: flex;
   gap: 20rpx;
   margin-bottom: 32rpx;
+}
+.cell {
+  flex: 1;
+  min-width: 0;
 }
 
 .records {
@@ -1703,3 +1741,18 @@ git commit -m "chore: 前端三画面联调收尾"
 - **Spec 覆盖**：列表→Task7；详情/盘口/记录→Task9；弹层→Task8；预计可赢/标签/校验→Task4；时间/状态/比分→Task3+Task7；深色壳层→Task5；后端 4 处修复→Task1；类型补齐→Task2。第 14 节 `result_profit` 假设落在 `settlement()`（Task4）与记录渲染（Task9）。
 - **占位检查**：无 TBD/TODO；每个代码步骤含完整代码。
 - **类型一致**：`BetType`、`directionLabel/oddsValue/potentialWin/betCondition/recordOddsText/settlement` 在 Task4 定义，Task8/Task9 按相同签名调用；`MatchDetail`/`BetRecord` 在 Task2 定义后于组件复用；`OddsButton` props（label/value/selected/disabled）在 Task6 定义、Task8/9 一致使用。
+
+## 对抗性审查修订（双 agent 平台 + 逻辑两路）
+
+已合入的修正：
+- **scss `@import` 改相对路径** `../../styles/tokens.scss`（`@` 别名在 sass 编译阶段不解析，会导致首个 `yarn dev` 直接编译失败）。Task5 创建的 `src/styles/tokens.scss` 仅含 SCSS 变量，多组件各自 import 不产生重复 CSS。
+- **赔率按钮等分**：mp-weixin 自定义组件会包一层节点，`flex:1` 落在组件内部根节点而非父 flex 直接子节点。改为父级用 `<view class="cell">`（`flex:1; min-width:0`）包裹每个 `<OddsButton>`，按钮根节点改 `width:100%`（Task6/8/9）。
+- **两行省略防失效**：autoprefixer 会删 `-webkit-box-orient`，line-clamp 失效。`.label` 加 `/* autoprefixer: ignore next */` 并定宽（Task6）。
+- **投注人关联显式别名**：`@BelongsTo(() => User, { foreignKey:"openid", targetKey:"openid", as:"user" })` + `include:[{model:User, as:"user"}]`，确保序列化 key 为 `user`（Task1）。
+- **盘口快照**：快照逻辑移入 `BetSheet`（打开时深拷贝 `match`，弹层展示与下注 condition 均用快照，并 emit `condition`）；详情页 `onConfirm` 直接用 `payload.condition`，不再用轮询后的实时 `match` 重算——否则后端 `-2`「盘口已变化」永不触发（Task8/9）。
+- **placeholder 颜色**：scoped 下 `placeholder-class` 不命中，改用内联 `placeholder-style`（Task8）。
+- **轮询生命周期**：拆为 `refresh()`（仅取数）与 `startTimer()`（仅 onShow 启动一次、命中 `end` 自停），消除每个 tick 重建定时器与 `onConfirm` 的定时器竞争（Task9）。
+
+已知风险（不阻塞、本次不做）：
+- **赔率漂移不被 `-2` 拦截**：后端 `bet()` 只对 `condition`（让球数）做 `.eq` 校验返回 `-2`，对 `value`（水位/赔率）不校验，直接用服务端最新值落库。若让球数未变但水位变化，用户会按变化后的水位静默成交、"预计可赢"与实际结算可能不符。闭环需后端对 `value` 也做快照比较，超出"最小修复"范围，留作后续。
+- **DECIMAL 字段**：经 `pg` 驱动 NUMERIC 默认以**字符串**返回，计划将 amount/value/condition/result_profit 等全标 `string` 并用字符串构造 `Decimal`、模板直显——已确认正确。
