@@ -10,7 +10,13 @@ import {
   type BetType,
 } from "@/utils/bet";
 import { formatMatchTime, matchStatusText } from "@/utils/format";
-import { onHide, onLoad, onShow, onUnload } from "@dcloudio/uni-app";
+import {
+  onHide,
+  onLoad,
+  onShareAppMessage,
+  onShow,
+  onUnload,
+} from "@dcloudio/uni-app";
 import { ref } from "vue";
 import BetSheet from "./BetSheet.vue";
 import OddsButton from "./OddsButton.vue";
@@ -105,6 +111,9 @@ onShow(() => {
 });
 onHide(() => clearInterval(timer));
 onUnload(() => clearInterval(timer));
+onShareAppMessage(() => {
+  return {};
+});
 </script>
 
 <template>
@@ -189,13 +198,13 @@ onUnload(() => clearInterval(timer));
         <view class="rec-right">
           <template v-if="bet.result === null">
             <text class="rec-settle" :class="settlement(bet).state">
-              {{ bet.amount }}
+              {{ Number(bet.amount) }}
             </text>
           </template>
           <template v-else>
-            <text class="rec-amount">{{ bet.amount }}</text>
+            <text class="rec-amount">{{ Number(bet.amount) }}</text>
             <text class="rec-settle" :class="settlement(bet).state">
-              {{ settlement(bet).text }}
+              {{ Number(settlement(bet).text) }}
             </text>
           </template>
         </view>

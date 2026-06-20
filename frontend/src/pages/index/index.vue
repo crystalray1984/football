@@ -8,7 +8,7 @@ import { onMounted, ref } from "vue";
 import { api, setToken } from "@/api";
 import Login from "./Login.vue";
 import Matches from "./Matches.vue";
-import { onHide, onShow } from "@dcloudio/uni-app";
+import { onHide, onShow, onShareAppMessage } from "@dcloudio/uni-app";
 
 /**
  * 显示的内容组件
@@ -24,6 +24,10 @@ onShow(() => {
 });
 onHide(() => {
   active.value = false;
+});
+
+onShareAppMessage(() => {
+  return {};
 });
 
 onMounted(async () => {
