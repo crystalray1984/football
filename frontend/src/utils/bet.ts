@@ -66,16 +66,18 @@ export function oddsValue(type: BetType, match: OddsMatch): string {
 }
 
 /**
- * 预计可赢（纯盈利）：让球=本金×水位；胜平负=本金×(赔率-1)
+ * 展示用亚赔：后端所有赔率（含让球水位）存的都是欧赔（含本金），
+ * 前端一律展示为 欧赔 - 1。仅影响展示，不改动下注/落库数据。
  */
-export function potentialWin(
-  type: BetType,
-  amount: string | number,
-  value: string,
-): string {
-  const a = new Decimal(amount || 0);
-  if (isAsian(type)) return a.mul(value).toFixed(2);
-  return a.mul(new Decimal(value).sub(1)).toFixed(2);
+export function displayOdds(value: string): string {
+  return new Decimal(value).sub(1).toFixed(2);
+}
+
+/**
+ * 预计可赢（纯盈利）：本金 × (欧赔 - 1) = 本金 × 亚赔
+ */
+export function potentialWin(amount: string | number, value: string): string {
+  return new Decimal(amount || 0).mul(new Decimal(value).sub(1)).toFixed(2);
 }
 
 /**
@@ -103,15 +105,15 @@ export function recordOddsText(
 ): string {
   switch (bet.type) {
     case "ah1":
-      return `让球 ${match.team1_name} ${formatHandicap(bet.condition)} @${bet.value}`;
+      return `让球 ${match.team1_name} ${formatHandicap(bet.condition)} @${displayOdds(bet.value)}`;
     case "ah2":
-      return `让球 ${match.team2_name} ${formatHandicap(bet.condition)} @${bet.value}`;
+      return `让球 ${match.team2_name} ${formatHandicap(bet.condition)} @${displayOdds(bet.value)}`;
     case "win1":
-      return `${match.team1_name} 胜 @${bet.value}`;
+      return `${match.team1_name} 胜 @${displayOdds(bet.value)}`;
     case "win2":
-      return `${match.team2_name} 胜 @${bet.value}`;
+      return `${match.team2_name} 胜 @${displayOdds(bet.value)}`;
     default:
-      return `平局 @${bet.value}`;
+      return `平局 @${displayOdds(bet.value)}`;
   }
 }
 

@@ -7,6 +7,7 @@ import BetSheet from "./BetSheet.vue";
 import { formatHandicap, formatMatchTime, matchStatusText } from "@/utils/format";
 import {
   directionLabel,
+  displayOdds,
   oddsValue,
   recordOddsText,
   settlement,
@@ -92,7 +93,7 @@ const onConfirm = async (payload: {
 
 // 模板辅助
 const label = (t: BetType) => (match.value ? directionLabel(t, match.value) : "");
-const odds = (t: BetType) => (match.value ? oddsValue(t, match.value) : "");
+const odds = (t: BetType) => (match.value ? displayOdds(oddsValue(t, match.value)) : "");
 const recText = (bet: BetRecord) =>
   match.value ? recordOddsText(bet, match.value) : "";
 

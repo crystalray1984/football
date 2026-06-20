@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   betCondition,
   directionLabel,
+  displayOdds,
   MAX_BET,
   MIN_BET,
   oddsValue,
@@ -11,12 +12,13 @@ import {
   validateAmount,
 } from "./bet";
 
+// 注意：后端所有赔率（含让球）均存欧赔（含本金），前端一律展示为 欧赔-1（亚赔）
 const match = {
   team1_name: "曼城",
   team2_name: "利物浦",
   ah_condition: "-0.5",
-  ah1_value: "0.95",
-  ah2_value: "0.88",
+  ah1_value: "1.95",
+  ah2_value: "1.88",
   win1_value: "2.10",
   win2_value: "3.05",
   draw_value: "3.20",
@@ -31,14 +33,20 @@ describe("directionLabel", () => {
 });
 
 describe("oddsValue", () => {
-  it("ah1", () => expect(oddsValue("ah1", match)).toBe("0.95"));
-  it("draw", () => expect(oddsValue("draw", match)).toBe("3.20"));
+  it("ah1 返回原始欧赔", () => expect(oddsValue("ah1", match)).toBe("1.95"));
+  it("draw 返回原始欧赔", () => expect(oddsValue("draw", match)).toBe("3.20"));
+});
+
+describe("displayOdds", () => {
+  it("欧赔减 1 得亚赔，两位小数", () => expect(displayOdds("1.95")).toBe("0.95"));
+  it("胜平负欧赔", () => expect(displayOdds("2.10")).toBe("1.10"));
+  it("平局欧赔", () => expect(displayOdds("3.20")).toBe("2.20"));
 });
 
 describe("potentialWin", () => {
-  it("让球=本金×水位", () => expect(potentialWin("ah1", 100, "0.95")).toBe("95.00"));
-  it("胜平负=本金×(赔率-1)", () => expect(potentialWin("win1", 100, "2.10")).toBe("110.00"));
-  it("空金额为0", () => expect(potentialWin("win1", 0, "2.10")).toBe("0.00"));
+  it("让球：本金×(欧赔-1)", () => expect(potentialWin(100, "1.95")).toBe("95.00"));
+  it("胜平负：本金×(欧赔-1)", () => expect(potentialWin(100, "2.10")).toBe("110.00"));
+  it("空金额为0", () => expect(potentialWin(0, "2.10")).toBe("0.00"));
 });
 
 describe("betCondition", () => {
@@ -55,21 +63,21 @@ describe("validateAmount", () => {
 });
 
 describe("recordOddsText", () => {
-  it("让球主队", () =>
-    expect(recordOddsText({ type: "ah1", condition: "-0.5", value: "0.95" }, match)).toBe(
+  it("让球主队（@亚赔）", () =>
+    expect(recordOddsText({ type: "ah1", condition: "-0.5", value: "1.95" }, match)).toBe(
       "让球 曼城 -0.5 @0.95",
     ));
-  it("让球客队", () =>
-    expect(recordOddsText({ type: "ah2", condition: "0.5", value: "0.88" }, match)).toBe(
+  it("让球客队（@亚赔）", () =>
+    expect(recordOddsText({ type: "ah2", condition: "0.5", value: "1.88" }, match)).toBe(
       "让球 利物浦 +0.5 @0.88",
     ));
-  it("主胜", () =>
+  it("主胜（@亚赔）", () =>
     expect(recordOddsText({ type: "win1", condition: "0", value: "2.10" }, match)).toBe(
-      "曼城 胜 @2.10",
+      "曼城 胜 @1.10",
     ));
-  it("平局", () =>
+  it("平局（@亚赔）", () =>
     expect(recordOddsText({ type: "draw", condition: "0", value: "3.20" }, match)).toBe(
-      "平局 @3.20",
+      "平局 @2.20",
     ));
 });
 

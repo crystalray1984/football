@@ -5,6 +5,7 @@ import { formatHandicap } from "@/utils/format";
 import {
   betCondition,
   directionLabel,
+  displayOdds,
   isAsian,
   oddsValue,
   potentialWin,
@@ -51,7 +52,7 @@ const isAh = computed(() => isAsian(props.type));
 const amount = computed(() => parseInt(amountInput.value || "0", 10) || 0);
 const valid = computed(() => validateAmount(amount.value));
 const win = computed(() =>
-  potentialWin(selected.value, amount.value, oddsValue(selected.value, snap.value)),
+  potentialWin(amount.value, oddsValue(selected.value, snap.value)),
 );
 
 const subtitle = computed(() => {
@@ -83,7 +84,7 @@ function btnLabel(t: BetType): string {
   return directionLabel(t, snap.value);
 }
 function btnValue(t: BetType): string {
-  return oddsValue(t, snap.value);
+  return displayOdds(oddsValue(t, snap.value));
 }
 </script>
 
