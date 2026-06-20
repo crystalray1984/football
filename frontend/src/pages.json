@@ -6,13 +6,15 @@
     },
     {
       "path": "pages/match/index",
-      "style": {}
+      "style": {
+        "navigationBarTitleText": "比赛详情"
+      }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "black",
+    "navigationBarTextStyle": "white",
     "navigationBarTitleText": "足球竞猜",
-    "navigationBarBackgroundColor": "#ffffff",
-    "backgroundColor": "#f7f8fa"
+    "navigationBarBackgroundColor": "#141b2c",
+    "backgroundColor": "#0e1320"
   }
 }
