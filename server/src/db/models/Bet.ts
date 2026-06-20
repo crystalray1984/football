@@ -16,6 +16,7 @@ import {
   UpdatedAt,
 } from "sequelize-typescript";
 import { User } from "./User";
+import { Match } from "./Match";
 
 /**
  * 投注记录
@@ -44,6 +45,12 @@ export class Bet extends Model<
    */
   @BelongsTo(() => User, { foreignKey: "openid", targetKey: "openid", as: "user" })
   declare user?: User;
+
+  /**
+   * 比赛信息
+   */
+  @BelongsTo(() => Match, { foreignKey: "match_id", as: "match" })
+  declare match?: Match;
 
   /**
    * 比赛id

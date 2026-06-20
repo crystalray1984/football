@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { handicap } from "./format";
+import { formatMoney, handicap } from "./format";
 
 export type BetType = "ah1" | "ah2" | "win1" | "win2" | "draw";
 
@@ -77,7 +77,7 @@ export function displayOdds(value: string): string {
  * 预计可赢（纯盈利）：本金 × (欧赔 - 1) = 本金 × 亚赔
  */
 export function potentialWin(amount: string | number, value: string): string {
-  return new Decimal(amount || 0).mul(new Decimal(value).sub(1)).toFixed(2);
+  return formatMoney(new Decimal(amount || 0).mul(new Decimal(value).sub(1)));
 }
 
 /**
@@ -130,7 +130,25 @@ export function settlement(bet: { result_profit: string | null }): {
     return { state: "pending", text: "待结算" };
   }
   const p = new Decimal(bet.result_profit);
-  if (p.gt(0)) return { state: "win", text: "+" + p.toString() };
-  if (p.lt(0)) return { state: "loss", text: p.toString() };
-  return { state: "flat", text: p.toString() };
+  if (p.gt(0)) return { state: "win", text: "+" + formatMoney(p) };
+  if (p.lt(0)) return { state: "loss", text: formatMoney(p) };
+  return { state: "flat", text: formatMoney(p) };
+}
+
+/**
+ * 合计已结算投注的净盈亏；未结算（result_profit == null）不计入。
+ * 返回精确的十进制字符串（如 "45"、"30.75"、"-20"、"0"）。
+ */
+export function sumSettledProfit(
+  bets: { result_profit: string | null }[],
+): string {
+  return bets
+    .reduce(
+      (acc, b) =>
+        b.result_profit === null || b.result_profit === undefined
+          ? acc
+          : acc.add(b.result_profit),
+      new Decimal(0),
+    )
+    .toString();
 }

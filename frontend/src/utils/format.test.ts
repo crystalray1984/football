@@ -20,8 +20,12 @@ describe("formatHandicap", () => {
 });
 
 describe("formatMoney", () => {
-  it("两位小数", () => expect(formatMoney("95")).toBe("95.00"));
-  it("接受数字", () => expect(formatMoney(50)).toBe("50.00"));
+  it("整数无小数", () => expect(formatMoney("95")).toBe("95"));
+  it("接受数字", () => expect(formatMoney(50)).toBe("50"));
+  it("去掉末尾多余的 0", () => expect(formatMoney("95.50")).toBe("95.5"));
+  it("保留有效两位", () => expect(formatMoney("95.55")).toBe("95.55"));
+  it("超过两位四舍五入", () => expect(formatMoney("95.555")).toBe("95.56"));
+  it("零显示 0", () => expect(formatMoney("0")).toBe("0"));
 });
 
 describe("matchStatusText", () => {

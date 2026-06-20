@@ -9,6 +9,7 @@ import {
   potentialWin,
   recordOddsText,
   settlement,
+  sumSettledProfit,
   validateAmount,
 } from "./bet";
 
@@ -44,9 +45,10 @@ describe("displayOdds", () => {
 });
 
 describe("potentialWin", () => {
-  it("让球：本金×(欧赔-1)", () => expect(potentialWin(100, "1.95")).toBe("95.00"));
-  it("胜平负：本金×(欧赔-1)", () => expect(potentialWin(100, "2.10")).toBe("110.00"));
-  it("空金额为0", () => expect(potentialWin(0, "2.10")).toBe("0.00"));
+  it("让球：本金×(欧赔-1)", () => expect(potentialWin(100, "1.95")).toBe("95"));
+  it("胜平负：本金×(欧赔-1)", () => expect(potentialWin(100, "2.10")).toBe("110"));
+  it("空金额为 0", () => expect(potentialWin(0, "2.10")).toBe("0"));
+  it("最多两位小数", () => expect(potentialWin(150, "1.333")).toBe("49.95"));
 });
 
 describe("betCondition", () => {
@@ -84,10 +86,39 @@ describe("recordOddsText", () => {
 describe("settlement", () => {
   it("未结算", () =>
     expect(settlement({ result_profit: null })).toEqual({ state: "pending", text: "待结算" }));
-  it("盈利", () =>
-    expect(settlement({ result_profit: "95" })).toEqual({ state: "win", text: "+95.00" }));
+  it("盈利（带 +）", () =>
+    expect(settlement({ result_profit: "95" })).toEqual({ state: "win", text: "+95" }));
   it("亏损", () =>
-    expect(settlement({ result_profit: "-50" })).toEqual({ state: "loss", text: "-50.00" }));
+    expect(settlement({ result_profit: "-50" })).toEqual({ state: "loss", text: "-50" }));
   it("持平", () =>
-    expect(settlement({ result_profit: "0" })).toEqual({ state: "flat", text: "0.00" }));
+    expect(settlement({ result_profit: "0" })).toEqual({ state: "flat", text: "0" }));
+  it("去掉末尾 0", () =>
+    expect(settlement({ result_profit: "95.50" })).toEqual({ state: "win", text: "+95.5" }));
+  it("超过两位四舍五入", () =>
+    expect(settlement({ result_profit: "95.555" })).toEqual({ state: "win", text: "+95.56" }));
+});
+
+describe("sumSettledProfit", () => {
+  it("空列表为 0", () => expect(sumSettledProfit([])).toBe("0"));
+  it("仅未结算（null）不计入，结果 0", () =>
+    expect(
+      sumSettledProfit([{ result_profit: null }, { result_profit: null }]),
+    ).toBe("0"));
+  it("混合：跳过未结算，累加已结算净盈亏", () =>
+    expect(
+      sumSettledProfit([
+        { result_profit: "95" },
+        { result_profit: null },
+        { result_profit: "-50" },
+        { result_profit: "0" },
+      ]),
+    ).toBe("45"));
+  it("小数累加精确", () =>
+    expect(
+      sumSettledProfit([{ result_profit: "10.5" }, { result_profit: "20.25" }]),
+    ).toBe("30.75"));
+  it("净亏损为负", () =>
+    expect(
+      sumSettledProfit([{ result_profit: "10" }, { result_profit: "-30" }]),
+    ).toBe("-20"));
 });

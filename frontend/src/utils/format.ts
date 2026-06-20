@@ -32,10 +32,10 @@ export function handicap(condition: string | number | Decimal) {
 }
 
 /**
- * 金额格式化：两位小数
+ * 金额格式化：最多两位小数（四舍五入到 2 位后去掉末尾多余的 0）
  */
 export function formatMoney(amount: string | number | Decimal): string {
-  return new Decimal(amount).toFixed(2);
+  return new Decimal(amount).toDecimalPlaces(2).toString();
 }
 
 /**
