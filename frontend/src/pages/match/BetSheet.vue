@@ -3,7 +3,6 @@ import { computed, ref, watch } from "vue";
 import OddsButton from "./OddsButton.vue";
 import { formatHandicap } from "@/utils/format";
 import {
-  betCondition,
   directionLabel,
   displayOdds,
   isAsian,
@@ -22,23 +21,21 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
-  confirm: [{ type: BetType; amount: number; condition: string }];
+  confirm: [{ type: BetType; amount: number }];
 }>();
 
 const quickAmounts = [50, 100, 200, 500];
 
 const selected = ref<BetType>(props.type);
 const amountInput = ref("");
-// 打开弹层时对盘口做快照：轮询不改动弹层内已展示赔率，下注也用快照值（盘口变化交后端 -2 兜底）
-const snap = ref<MatchDetail>(props.match);
 
+// 弹层不持有盘口数据，直接读页面（轮询源）的 props.match，盘口/赔率跟随页面实时更新
 watch(
   () => props.visible,
   (v) => {
     if (v) {
       selected.value = props.type;
       amountInput.value = "";
-      snap.value = JSON.parse(JSON.stringify(props.match));
     }
   },
 );
@@ -52,14 +49,14 @@ const isAh = computed(() => isAsian(props.type));
 const amount = computed(() => parseInt(amountInput.value || "0", 10) || 0);
 const valid = computed(() => validateAmount(amount.value));
 const win = computed(() =>
-  potentialWin(amount.value, oddsValue(selected.value, snap.value)),
+  potentialWin(amount.value, oddsValue(selected.value, props.match)),
 );
 
 const subtitle = computed(() => {
-  const base = `${snap.value.team1_name} VS ${snap.value.team2_name}`;
+  const base = `${props.match.team1_name} VS ${props.match.team2_name}`;
   if (isAh.value) {
-    return `${base} · 让球 ${snap.value.team1_name} ${formatHandicap(
-      snap.value.ah_condition,
+    return `${base} · 让球 ${props.match.team1_name} ${formatHandicap(
+      props.match.ah_condition,
     )}`;
   }
   return base;
@@ -73,18 +70,14 @@ function pick(v: number) {
 }
 function confirm() {
   if (!valid.value) return;
-  emit("confirm", {
-    type: selected.value,
-    amount: amount.value,
-    condition: betCondition(selected.value, snap.value),
-  });
+  emit("confirm", { type: selected.value, amount: amount.value });
 }
 
 function btnLabel(t: BetType): string {
-  return directionLabel(t, snap.value);
+  return directionLabel(t, props.match);
 }
 function btnValue(t: BetType): string {
-  return displayOdds(oddsValue(t, snap.value));
+  return displayOdds(oddsValue(t, props.match));
 }
 </script>
 

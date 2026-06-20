@@ -6,6 +6,7 @@ import OddsButton from "./OddsButton.vue";
 import BetSheet from "./BetSheet.vue";
 import { formatHandicap, formatMatchTime, matchStatusText } from "@/utils/format";
 import {
+  betCondition,
   directionLabel,
   displayOdds,
   oddsValue,
@@ -62,11 +63,7 @@ const openBet = (type: BetType) => {
   sheetVisible.value = true;
 };
 
-const onConfirm = async (payload: {
-  type: BetType;
-  amount: number;
-  condition: string;
-}) => {
+const onConfirm = async (payload: { type: BetType; amount: number }) => {
   const m = match.value;
   if (!m) return;
   const ret = await api({
@@ -76,7 +73,7 @@ const onConfirm = async (payload: {
       match_id: m.id,
       type: payload.type,
       amount: payload.amount,
-      condition: payload.condition,
+      condition: betCondition(payload.type, m),
     },
   });
   if (ret.code === 0) {
