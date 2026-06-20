@@ -198,7 +198,7 @@ async function getMatchList(_req: FastifyRequest, reply: FastifyReply) {
 async function getMatchDetail(req: FastifyRequest, reply: FastifyReply) {
   const query = req.query as Record<string, string>;
   const match_id = parseInt(query?.match_id);
-  if (!isNaN(match_id) || match_id <= 0) {
+  if (isNaN(match_id) || match_id <= 0) {
     reply.send({
       code: -1,
       msg: "找不到比赛",
@@ -237,7 +237,7 @@ async function getMatchDetail(req: FastifyRequest, reply: FastifyReply) {
 async function getMatchBets(req: FastifyRequest, reply: FastifyReply) {
   const query = req.query as Record<string, string>;
   const match_id = parseInt(query?.match_id);
-  if (!isNaN(match_id) || match_id <= 0) {
+  if (isNaN(match_id) || match_id <= 0) {
     reply.send({
       code: 0,
       data: [],
@@ -249,7 +249,7 @@ async function getMatchBets(req: FastifyRequest, reply: FastifyReply) {
     where: {
       match_id,
     },
-    include: [User],
+    include: [{ model: User, as: "user" }],
     order: [["id", "desc"]],
   });
 
@@ -279,7 +279,7 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
     return;
   }
 
-  if (!isNaN(match_id) || match_id <= 0 || !Number.isSafeInteger(match_id)) {
+  if (isNaN(match_id) || match_id <= 0 || !Number.isSafeInteger(match_id)) {
     reply.send({
       code: -1,
       msg: "找不到比赛",
@@ -288,7 +288,7 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
   }
 
   if (
-    !isNaN(amount) ||
+    isNaN(amount) ||
     !Number.isSafeInteger(amount) ||
     amount < config.min_bet ||
     amount > config.max_bet
@@ -372,7 +372,7 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
 
   //判断单场比赛此用户总金额
   const sum = await Bet.sum("amount", { where: { match_id, openid } });
-  if (Decimal(sum).add(amount).gt(config.max_bet)) {
+  if (Decimal(sum || 0).add(amount).gt(config.max_bet)) {
     reply.send({
       code: -1,
       msg: "单场比赛投注超限",
@@ -400,6 +400,6 @@ export default function routes(app: FastifyInstance) {
   app.post("/api/register", register);
   app.get("/api/match/list", getMatchList);
   app.get("/api/match/detail", getMatchDetail);
-  app.get("/api/match/bets", getMatchDetail);
+  app.get("/api/match/bets", getMatchBets);
   app.post("/api/bet", bet);
 }

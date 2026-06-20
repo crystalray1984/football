@@ -6,10 +6,10 @@ import type {
 import {
   AllowNull,
   AutoIncrement,
+  BelongsTo,
   Column,
   CreatedAt,
   DataType,
-  HasOne,
   Model,
   PrimaryKey,
   Table,
@@ -42,7 +42,7 @@ export class Bet extends Model<
   /**
    * 用户信息
    */
-  @HasOne(() => User, "openid")
+  @BelongsTo(() => User, { foreignKey: "openid", targetKey: "openid", as: "user" })
   declare user?: User;
 
   /**
