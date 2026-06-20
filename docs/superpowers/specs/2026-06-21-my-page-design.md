@@ -59,11 +59,12 @@
     ```ts
     Bet.findAll({
       where: { openid },
-      include: [{ model: Match, as: "match",
+      include: [{ model: Match, as: "match", required: true,
         attributes: ["id", "team1_name", "team2_name", "match_time"] }],
       order: [["id", "desc"]],
     })
     ```
+  - `required: true`（INNER JOIN）保证每条记录都能带出比赛信息，避免前端 `bet.match` 为 `null` 崩溃；`v_f_match` 视图保留全部比赛（含已结束），正常不会因此丢记录。
   - 返回 `{ code: 0, data: bets }`。
 - 在 `routes()` 注册：`app.get("/api/my/bets", getMyBets)`。
 
@@ -122,6 +123,7 @@
 - **未登录 / 未注册**：`getToken()` 为空 → 显示 `0`、空列表、不发请求。
 - **鉴权竞态**：已注册用户在启动鉴权（启动 Tab `onMounted`）完成前的极短窗口内点「我的」，`getToken()` 仍空、会短暂显示 `0`；下次 `onShow` 重新校验即恢复。实践中可忽略（鉴权在启动即触发）。如需更稳妥，可后续将鉴权上移到 `App.vue onLaunch`——**本期不做**。
 - **空记录**：显示「暂无投注记录」，合计 `0`。
+- **比赛信息缺失**：接口用 `required: true` 内联比赛，`bet.match` 必非空；极端情况下（比赛被移出视图）该笔不返回，前端不会崩溃。
 - **网络异常**：toast 提示，合计与列表保持上次/初始状态。
 
 ## 不做（YAGNI）
