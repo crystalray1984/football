@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { formatHandicap } from "./format";
+import { handicap } from "./format";
 
 export type BetType = "ah1" | "ah2" | "win1" | "win2" | "draw";
 
@@ -33,9 +33,9 @@ export function isAsian(type: BetType): boolean {
 export function directionLabel(type: BetType, match: MarketMatch): string {
   switch (type) {
     case "ah1":
-      return `${match.team1_name} ${formatHandicap(match.ah_condition)}`;
+      return `${match.team1_name} ${handicap(match.ah_condition)}`;
     case "ah2":
-      return `${match.team2_name} ${formatHandicap(
+      return `${match.team2_name} ${handicap(
         new Decimal(0).sub(match.ah_condition),
       )}`;
     case "win1":
@@ -105,9 +105,9 @@ export function recordOddsText(
 ): string {
   switch (bet.type) {
     case "ah1":
-      return `让球 ${match.team1_name} ${formatHandicap(bet.condition)} @${displayOdds(bet.value)}`;
+      return `让球 ${match.team1_name} ${handicap(bet.condition)} @${displayOdds(bet.value)}`;
     case "ah2":
-      return `让球 ${match.team2_name} ${formatHandicap(bet.condition)} @${displayOdds(bet.value)}`;
+      return `让球 ${match.team2_name} ${handicap(bet.condition)} @${displayOdds(bet.value)}`;
     case "win1":
       return `${match.team1_name} 胜 @${displayOdds(bet.value)}`;
     case "win2":
@@ -122,9 +122,10 @@ export type SettlementState = "pending" | "win" | "loss" | "flat";
 /**
  * 结算展示（口径为假设：result_profit 为净盈亏，null=未结算）
  */
-export function settlement(bet: {
-  result_profit: string | null;
-}): { state: SettlementState; text: string } {
+export function settlement(bet: { result_profit: string | null }): {
+  state: SettlementState;
+  text: string;
+} {
   if (bet.result_profit === null || bet.result_profit === undefined) {
     return { state: "pending", text: "待结算" };
   }

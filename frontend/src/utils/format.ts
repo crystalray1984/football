@@ -17,6 +17,20 @@ export function formatHandicap(condition: string | number | Decimal): string {
   return d.toString();
 }
 
+export function handicap(condition: string | number | Decimal) {
+  if (Decimal(condition).mul(4).mod(2).eq(0)) {
+    return formatHandicap(condition);
+  }
+
+  const sym = Decimal(condition).gt(0) ? "+" : "-";
+  const nums = [
+    Decimal(condition).sub("0.25").abs(),
+    Decimal(condition).add("0.25").abs(),
+  ];
+  nums.sort((num1, num2) => num1.comparedTo(num2));
+  return `${sym}${nums.map((t) => t.toString()).join("/")}`;
+}
+
 /**
  * 金额格式化：两位小数
  */
@@ -27,9 +41,7 @@ export function formatMoney(amount: string | number | Decimal): string {
 /**
  * 状态文案
  */
-export function matchStatusText(
-  state: "pending" | "playing" | "end",
-): string {
+export function matchStatusText(state: "pending" | "playing" | "end"): string {
   switch (state) {
     case "pending":
       return "可投注";

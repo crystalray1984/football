@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { api } from "@/api";
-import { onHide, onLoad, onShow, onUnload } from "@dcloudio/uni-app";
-import { ref } from "vue";
-import OddsButton from "./OddsButton.vue";
-import BetSheet from "./BetSheet.vue";
-import { formatHandicap, formatMatchTime, matchStatusText } from "@/utils/format";
 import {
   betCondition,
   directionLabel,
@@ -14,6 +9,11 @@ import {
   settlement,
   type BetType,
 } from "@/utils/bet";
+import { formatMatchTime, matchStatusText } from "@/utils/format";
+import { onHide, onLoad, onShow, onUnload } from "@dcloudio/uni-app";
+import { ref } from "vue";
+import BetSheet from "./BetSheet.vue";
+import OddsButton from "./OddsButton.vue";
 
 const matchId = ref(0);
 const match = ref<MatchDetail | null>(null);
@@ -89,8 +89,10 @@ const onConfirm = async (payload: { type: BetType; amount: number }) => {
 };
 
 // 模板辅助
-const label = (t: BetType) => (match.value ? directionLabel(t, match.value) : "");
-const odds = (t: BetType) => (match.value ? displayOdds(oddsValue(t, match.value)) : "");
+const label = (t: BetType) =>
+  match.value ? directionLabel(t, match.value) : "";
+const odds = (t: BetType) =>
+  match.value ? displayOdds(oddsValue(t, match.value)) : "";
 const recText = (bet: BetRecord) =>
   match.value ? recordOddsText(bet, match.value) : "";
 
@@ -109,28 +111,39 @@ onUnload(() => clearInterval(timer));
   <view v-if="match" class="detail">
     <!-- 信息卡 -->
     <view class="info-card">
-      <text class="status" :class="match.state">{{ matchStatusText(match.state) }}</text>
+      <text class="status" :class="match.state">{{
+        matchStatusText(match.state)
+      }}</text>
       <view class="teams">
         <text class="team">{{ match.team1_name }}</text>
-        <text
-          v-if="match.has_score && match.score1 !== null"
-          class="score"
-        >{{ match.score1 }} : {{ match.score2 }}</text>
+        <text v-if="match.has_score && match.score1 !== null" class="score"
+          >{{ match.score1 }} : {{ match.score2 }}</text
+        >
         <text v-else class="vs">VS</text>
         <text class="team team-right">{{ match.team2_name }}</text>
       </view>
       <text class="time">{{ formatMatchTime(match.match_time) }}</text>
-      <text v-if="!canBet()" class="closed">已封盘</text>
     </view>
 
     <!-- 让球盘 -->
     <view class="sec-head">
       <text class="sec-title"><text class="bar" />让球盘</text>
-      <text class="sec-sub">让球 {{ match.team1_name }} {{ formatHandicap(match.ah_condition) }}</text>
     </view>
     <view class="market">
-      <view class="cell"><OddsButton :label="label('ah1')" :value="odds('ah1')" :disabled="!canBet()" @click="openBet('ah1')" /></view>
-      <view class="cell"><OddsButton :label="label('ah2')" :value="odds('ah2')" :disabled="!canBet()" @click="openBet('ah2')" /></view>
+      <view class="cell"
+        ><OddsButton
+          :label="label('ah1')"
+          :value="odds('ah1')"
+          :disabled="!canBet()"
+          @click="openBet('ah1')"
+      /></view>
+      <view class="cell"
+        ><OddsButton
+          :label="label('ah2')"
+          :value="odds('ah2')"
+          :disabled="!canBet()"
+          @click="openBet('ah2')"
+      /></view>
     </view>
 
     <!-- 胜平负 -->
@@ -139,9 +152,27 @@ onUnload(() => clearInterval(timer));
         <text class="sec-title"><text class="bar" />胜平负</text>
       </view>
       <view class="market three">
-        <view class="cell"><OddsButton :label="label('win1')" :value="odds('win1')" :disabled="!canBet()" @click="openBet('win1')" /></view>
-        <view class="cell"><OddsButton :label="label('draw')" :value="odds('draw')" :disabled="!canBet()" @click="openBet('draw')" /></view>
-        <view class="cell"><OddsButton :label="label('win2')" :value="odds('win2')" :disabled="!canBet()" @click="openBet('win2')" /></view>
+        <view class="cell"
+          ><OddsButton
+            :label="label('win1')"
+            :value="odds('win1')"
+            :disabled="!canBet()"
+            @click="openBet('win1')"
+        /></view>
+        <view class="cell"
+          ><OddsButton
+            :label="label('draw')"
+            :value="odds('draw')"
+            :disabled="!canBet()"
+            @click="openBet('draw')"
+        /></view>
+        <view class="cell"
+          ><OddsButton
+            :label="label('win2')"
+            :value="odds('win2')"
+            :disabled="!canBet()"
+            @click="openBet('win2')"
+        /></view>
       </view>
     </template>
 

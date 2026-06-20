@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import OddsButton from "./OddsButton.vue";
-import { formatHandicap } from "@/utils/format";
 import {
   directionLabel,
   displayOdds,
@@ -11,6 +8,9 @@ import {
   validateAmount,
   type BetType,
 } from "@/utils/bet";
+import { handicap } from "@/utils/format";
+import { computed, ref, watch } from "vue";
+import OddsButton from "./OddsButton.vue";
 
 const props = defineProps<{
   visible: boolean;
@@ -55,7 +55,7 @@ const win = computed(() =>
 const subtitle = computed(() => {
   const base = `${props.match.team1_name} VS ${props.match.team2_name}`;
   if (isAh.value) {
-    return `${base} · 让球 ${props.match.team1_name} ${formatHandicap(
+    return `${base} · 让球 ${props.match.team1_name} ${handicap(
       props.match.ah_condition,
     )}`;
   }
