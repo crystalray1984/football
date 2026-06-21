@@ -39,6 +39,27 @@ export function formatMoney(amount: string | number | Decimal): string {
 }
 
 /**
+ * 分组用日期键：本地日 YYYY-MM-DD
+ */
+export function dayKey(input: string | Date): string {
+  return dayjs(input).format("YYYY-MM-DD");
+}
+
+/**
+ * 日期分组头展示：MM-DD
+ */
+export function formatDay(key: string): string {
+  return dayjs(key).format("MM-DD");
+}
+
+/**
+ * 行内时间：HH:mm
+ */
+export function formatTime(input: string | Date): string {
+  return dayjs(input).format("HH:mm");
+}
+
+/**
  * 状态文案
  */
 export function matchStatusText(state: "pending" | "playing" | "end"): string {
