@@ -252,3 +252,17 @@ export function compareScore(
   }
   return "0";
 }
+
+/**
+ * 收益展示：最多两位小数；正数带 + 记 win、负数 loss、0 flat
+ */
+export function profitDisplay(amount: string): {
+  state: "win" | "loss" | "flat";
+  text: string;
+} {
+  const d = new Decimal(amount);
+  const money = formatMoney(d);
+  if (d.gt(0)) return { state: "win", text: `+${money}` };
+  if (d.lt(0)) return { state: "loss", text: money };
+  return { state: "flat", text: money };
+}

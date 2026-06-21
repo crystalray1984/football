@@ -11,6 +11,7 @@ import {
   settlement,
   sumSettledProfit,
   validateAmount,
+  profitDisplay,
 } from "./bet";
 
 // 注意：后端所有赔率（含让球）均存欧赔（含本金），前端一律展示为 欧赔-1（亚赔）
@@ -121,4 +122,15 @@ describe("sumSettledProfit", () => {
     expect(
       sumSettledProfit([{ result_profit: "10" }, { result_profit: "-30" }]),
     ).toBe("-20"));
+});
+
+describe("profitDisplay", () => {
+  it("盈利带 +、win", () =>
+    expect(profitDisplay("45")).toEqual({ state: "win", text: "+45" }));
+  it("亏损 loss", () =>
+    expect(profitDisplay("-20")).toEqual({ state: "loss", text: "-20" }));
+  it("持平 flat", () =>
+    expect(profitDisplay("0")).toEqual({ state: "flat", text: "0" }));
+  it("去末尾 0", () =>
+    expect(profitDisplay("95.50")).toEqual({ state: "win", text: "+95.5" }));
 });
