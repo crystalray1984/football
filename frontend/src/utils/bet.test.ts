@@ -3,6 +3,7 @@ import {
   betCondition,
   directionLabel,
   displayOdds,
+  groupBetsByDay,
   MAX_BET,
   MIN_BET,
   oddsValue,
@@ -133,4 +134,35 @@ describe("profitDisplay", () => {
     expect(profitDisplay("0")).toEqual({ state: "flat", text: "0" }));
   it("去末尾 0", () =>
     expect(profitDisplay("95.50")).toEqual({ state: "win", text: "+95.5" }));
+});
+
+// 最小 MyBet 夹具：仅分组所需字段
+const mb = (match_time: string, result_profit: string | null): MyBet =>
+  ({ result_profit, match: { match_time } } as unknown as MyBet);
+
+describe("groupBetsByDay", () => {
+  it("空数组", () => expect(groupBetsByDay([])).toEqual([]));
+  it("按比赛日分组并按日倒序，组内保持输入顺序", () => {
+    const a = mb("2026-06-20T18:00:00", "10");
+    const b = mb("2026-06-21T20:00:00", "5");
+    const c = mb("2026-06-20T21:00:00", "-3");
+    const groups = groupBetsByDay([a, b, c]);
+    expect(groups.map((g) => g.date)).toEqual(["2026-06-21", "2026-06-20"]);
+    expect(groups[1].bets).toEqual([a, c]);
+  });
+  it("当日收益排除未结算", () => {
+    const groups = groupBetsByDay([
+      mb("2026-06-20T18:00:00", "10"),
+      mb("2026-06-20T19:00:00", null),
+      mb("2026-06-20T20:00:00", "-3"),
+    ]);
+    expect(groups[0].profit).toBe("7");
+  });
+  it("跨年区分", () => {
+    const groups = groupBetsByDay([
+      mb("2025-06-21T18:00:00", "1"),
+      mb("2026-06-21T18:00:00", "2"),
+    ]);
+    expect(groups.map((g) => g.date)).toEqual(["2026-06-21", "2025-06-21"]);
+  });
 });

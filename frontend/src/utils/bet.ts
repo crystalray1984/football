@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { formatMoney, handicap } from "./format";
+import { dayKey, formatMoney, handicap } from "./format";
 
 export type BetType = "ah1" | "ah2" | "win1" | "win2" | "draw";
 
@@ -265,4 +265,31 @@ export function profitDisplay(amount: string): {
   if (d.gt(0)) return { state: "win", text: `+${money}` };
   if (d.lt(0)) return { state: "loss", text: money };
   return { state: "flat", text: money };
+}
+
+export interface BetDayGroup {
+  /** 分组键，YYYY-MM-DD（比赛本地日） */
+  date: string;
+  /** 当日已结算净盈亏 */
+  profit: string;
+  bets: MyBet[];
+}
+
+/**
+ * 按比赛日期分组投注记录；组按日倒序，组内保持输入顺序。
+ */
+export function groupBetsByDay(bets: MyBet[]): BetDayGroup[] {
+  const map = new Map<string, MyBet[]>();
+  for (const bet of bets) {
+    const key = dayKey(bet.match.match_time);
+    const arr = map.get(key);
+    if (arr) arr.push(bet);
+    else map.set(key, [bet]);
+  }
+  const groups: BetDayGroup[] = [];
+  for (const [date, dayBets] of map) {
+    groups.push({ date, profit: sumSettledProfit(dayBets), bets: dayBets });
+  }
+  groups.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return groups;
 }
