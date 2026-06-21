@@ -4,6 +4,7 @@ import {
   directionLabel,
   displayOdds,
   groupBetsByDay,
+  groupUserDailyProfit,
   MAX_BET,
   MIN_BET,
   oddsValue,
@@ -134,6 +135,69 @@ describe("profitDisplay", () => {
     expect(profitDisplay("0")).toEqual({ state: "flat", text: "0" }));
   it("去末尾 0", () =>
     expect(profitDisplay("95.50")).toEqual({ state: "win", text: "+95.5" }));
+});
+
+const row = (
+  openid: string,
+  name: string,
+  match_time: string,
+  result_profit: string,
+): AdminBetRow => ({ openid, name, match_time, result_profit });
+
+describe("groupUserDailyProfit", () => {
+  it("空数组", () => expect(groupUserDailyProfit([])).toEqual([]));
+  it("单日多用户按收益倒序，含当日合计", () => {
+    expect(
+      groupUserDailyProfit([
+        row("o1", "张三", "2026-06-21T18:00:00", "120"),
+        row("o2", "李四", "2026-06-21T20:00:00", "-150"),
+      ]),
+    ).toEqual([
+      {
+        date: "2026-06-21",
+        total: "-30",
+        users: [
+          { name: "张三", profit: "120" },
+          { name: "李四", profit: "-150" },
+        ],
+      },
+    ]);
+  });
+  it("同用户多笔累加", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-21T18:00:00", "120"),
+      row("o1", "张三", "2026-06-21T21:00:00", "-20"),
+    ]);
+    expect(g[0].users).toEqual([{ name: "张三", profit: "100" }]);
+    expect(g[0].total).toBe("100");
+  });
+  it("多日按日倒序", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-20T18:00:00", "10"),
+      row("o1", "张三", "2026-06-21T18:00:00", "5"),
+    ]);
+    expect(g.map((d) => d.date)).toEqual(["2026-06-21", "2026-06-20"]);
+  });
+  it("同名不同 openid 区分", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-21T18:00:00", "10"),
+      row("o2", "张三", "2026-06-21T19:00:00", "20"),
+    ]);
+    expect(g[0].users.length).toBe(2);
+    expect(g[0].total).toBe("30");
+  });
+  it("小数收益累加精确", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-21T18:00:00", "10.5"),
+      row("o1", "张三", "2026-06-21T19:00:00", "-7.25"),
+      row("o2", "李四", "2026-06-21T20:00:00", "20.75"),
+    ]);
+    expect(g[0].users).toEqual([
+      { name: "李四", profit: "20.75" },
+      { name: "张三", profit: "3.25" },
+    ]);
+    expect(g[0].total).toBe("24");
+  });
 });
 
 // 最小 MyBet 夹具：仅分组所需字段

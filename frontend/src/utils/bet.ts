@@ -267,6 +267,46 @@ export function profitDisplay(amount: string): {
   return { state: "flat", text: money };
 }
 
+export interface UserDayProfit {
+  name: string;
+  profit: string;
+}
+export interface DailyUserProfit {
+  date: string;
+  total: string;
+  users: UserDayProfit[];
+}
+
+/**
+ * 管理员页：按比赛日 → 用户 汇总已结算净收益。
+ * 日按倒序；组内用户按当日收益倒序；total = 当日所有用户之和。
+ */
+export function groupUserDailyProfit(rows: AdminBetRow[]): DailyUserProfit[] {
+  const byDay = new Map<string, Map<string, { name: string; sum: Decimal }>>();
+  for (const r of rows) {
+    const date = dayKey(r.match_time);
+    let users = byDay.get(date);
+    if (!users) {
+      users = new Map();
+      byDay.set(date, users);
+    }
+    const u = users.get(r.openid);
+    if (u) u.sum = u.sum.add(r.result_profit);
+    else users.set(r.openid, { name: r.name, sum: new Decimal(r.result_profit) });
+  }
+  const result: DailyUserProfit[] = [];
+  for (const [date, users] of byDay) {
+    const sorted = [...users.values()].sort((a, b) => b.sum.comparedTo(a.sum));
+    const list = sorted.map((u) => ({ name: u.name, profit: u.sum.toString() }));
+    const total = sorted
+      .reduce((acc, u) => acc.add(u.sum), new Decimal(0))
+      .toString();
+    result.push({ date, total, users: list });
+  }
+  result.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return result;
+}
+
 export interface BetDayGroup {
   /** 分组键，YYYY-MM-DD（比赛本地日） */
   date: string;
