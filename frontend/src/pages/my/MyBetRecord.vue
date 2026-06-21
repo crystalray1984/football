@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { recordOddsText, settlement } from "@/utils/bet";
-import { formatMatchTime } from "@/utils/format";
+import { formatTime } from "@/utils/format";
 import { computed, type PropType } from "vue";
 
 const props = defineProps({
@@ -20,7 +20,7 @@ const settle = computed(() => settlement(props.bet));
         >{{ bet.match.team1_name }} vs {{ bet.match.team2_name }}</text
       >
       <text class="rec-odds"
-        >{{ formatMatchTime(bet.match.match_time) }} ·
+        >{{ formatTime(bet.match.match_time) }} ·
         {{ recordOddsText(bet, bet.match) }}</text
       >
     </view>
