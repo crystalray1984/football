@@ -3,6 +3,7 @@ import Decimal from "decimal.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { config } from "./config";
 import { Bet, Match, User } from "./db";
+import { Op } from "sequelize";
 
 function getMatchState(match: Pick<Match, "match_time" | "has_score">) {
   let state: string;
@@ -295,6 +296,30 @@ async function getMyBets(req: FastifyRequest, reply: FastifyReply) {
 }
 
 /**
+ * 管理员：全部用户的已结算投注（精简投影），前端按日/用户聚合。
+ * 注意：仅客户端做管理员鉴权，本接口不做服务端鉴权（与其它读接口一致）。
+ */
+async function getDailyProfit(_req: FastifyRequest, reply: FastifyReply) {
+  const bets = await Bet.findAll({
+    where: { result_profit: { [Op.not]: null } },
+    include: [
+      { model: User, as: "user", attributes: ["name"] },
+      { model: Match, as: "match", attributes: ["match_time"], required: true },
+    ],
+    order: [["id", "desc"]],
+  });
+
+  const data = bets.map((b) => ({
+    openid: b.openid,
+    name: b.user?.name ?? "",
+    match_time: b.match!.match_time,
+    result_profit: b.result_profit,
+  }));
+
+  reply.send({ code: 0, data });
+}
+
+/**
  * 投注
  */
 async function bet(req: FastifyRequest, reply: FastifyReply) {
@@ -437,5 +462,6 @@ export default function routes(app: FastifyInstance) {
   app.get("/api/match/detail", getMatchDetail);
   app.get("/api/match/bets", getMatchBets);
   app.get("/api/my/bets", getMyBets);
+  app.get("/api/admin/daily-profit", getDailyProfit);
   app.post("/api/bet", bet);
 }

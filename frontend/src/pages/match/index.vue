@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { api, getToken } from "@/api";
+import { api } from "@/api";
+import { isAdmin } from "@/utils/admin";
 import {
   betCondition,
   directionLabel,
@@ -116,9 +117,6 @@ onShareAppMessage(() => {
   return {};
 });
 
-const ADMIN = ["oc2fT5Oit4YpELFxpp2kTqSPKVis", "oc2fT5KZcBTUOm7Flb_OIwxIpKwk"];
-const isAdmin = ADMIN.includes(getToken());
-
 const emulateScore = reactive({
   active: false,
   score1: 0,
@@ -126,7 +124,7 @@ const emulateScore = reactive({
 });
 
 const toggleEmulate = () => {
-  if (isAdmin) {
+  if (isAdmin()) {
     emulateScore.active = !emulateScore.active;
   }
 };

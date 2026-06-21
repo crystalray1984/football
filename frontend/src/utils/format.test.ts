@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  dayKey,
+  formatDay,
   formatHandicap,
   formatMatchTime,
   formatMoney,
+  formatTime,
   matchStatusText,
 } from "./format";
 
@@ -32,4 +35,15 @@ describe("matchStatusText", () => {
   it("pending", () => expect(matchStatusText("pending")).toBe("可投注"));
   it("playing", () => expect(matchStatusText("playing")).toBe("进行中"));
   it("end", () => expect(matchStatusText("end")).toBe("已结束"));
+});
+
+describe("dayKey", () => {
+  it("本地日 YYYY-MM-DD", () =>
+    expect(dayKey("2026-06-21T18:00:00")).toBe("2026-06-21"));
+});
+describe("formatDay", () => {
+  it("MM-DD", () => expect(formatDay("2026-06-21")).toBe("06-21"));
+});
+describe("formatTime", () => {
+  it("HH:mm", () => expect(formatTime("2026-06-21T18:05:00")).toBe("18:05"));
 });

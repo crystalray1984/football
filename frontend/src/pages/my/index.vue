@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { api, getToken } from "@/api";
-import { sumSettledProfit } from "@/utils/bet";
-import { formatMoney } from "@/utils/format";
+import { groupBetsByDay, profitDisplay, sumSettledProfit } from "@/utils/bet";
 import { onShareAppMessage, onShow } from "@dcloudio/uni-app";
-import Decimal from "decimal.js";
 import { computed, ref } from "vue";
-import MyBetRecord from "./MyBetRecord.vue";
+import MyBetDayGroup from "./MyBetDayGroup.vue";
 
 const bets = ref<MyBet[]>([]);
 
@@ -30,19 +28,12 @@ const refresh = async () => {
 /**
  * 合计收益（已结算净盈亏之和）
  */
-const total = computed(() => {
-  const sum = sumSettledProfit(bets.value);
-  const d = new Decimal(sum);
-  let state: "win" | "loss" | "flat";
-  if (d.gt(0)) state = "win";
-  else if (d.lt(0)) state = "loss";
-  else state = "flat";
-  const money = formatMoney(sum);
-  return {
-    state,
-    text: state === "win" ? `+${money}` : money,
-  };
-});
+const total = computed(() => profitDisplay(sumSettledProfit(bets.value)));
+
+/**
+ * 按比赛日期分组
+ */
+const groups = computed(() => groupBetsByDay(bets.value));
 
 /**
  * 未结算笔数
@@ -74,13 +65,8 @@ onShareAppMessage(() => {
       <text class="sec-title"><text class="bar gray" />投注记录</text>
     </view>
 
-    <view v-if="bets.length > 0" class="records">
-      <MyBetRecord
-        v-for="bet in bets"
-        :key="bet.id"
-        :bet="bet"
-        class="record-item"
-      />
+    <view v-if="groups.length > 0">
+      <MyBetDayGroup v-for="g in groups" :key="g.date" :group="g" />
     </view>
     <view v-else class="rec-empty">暂无投注记录</view>
   </view>
@@ -149,19 +135,6 @@ onShareAppMessage(() => {
 }
 .bar.gray {
   background: $c-text2;
-}
-
-.records {
-  background: $c-card;
-  border: 2rpx solid $c-border;
-  border-radius: 24rpx;
-  overflow: hidden;
-}
-.record-item {
-  border-bottom: 2rpx solid $c-line;
-}
-.record-item:last-child {
-  border-bottom: none;
 }
 
 .rec-empty {

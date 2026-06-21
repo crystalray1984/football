@@ -2,6 +2,7 @@
 import { api } from "@/api";
 import { ref, watch } from "vue";
 import { formatMatchTime, matchStatusText } from "@/utils/format";
+import { isAdmin } from "@/utils/admin";
 
 const props = defineProps({
   /** 当前页面是否激活 */
@@ -24,6 +25,10 @@ const getList = async () => {
 
 const goDetail = (id: number) => {
   uni.navigateTo({ url: `/pages/match/index?match_id=${id}` });
+};
+
+const goSummary = () => {
+  uni.navigateTo({ url: "/pages/admin/daily/index" });
 };
 
 let timer: any;
@@ -66,6 +71,7 @@ watch(
     </view>
 
     <view v-if="matches.length === 0" class="empty">暂无比赛</view>
+    <view v-if="isAdmin()" class="fab" @click="goSummary">收益</view>
   </view>
 </template>
 
@@ -157,5 +163,24 @@ watch(
   color: $c-text2;
   font-size: 26rpx;
   padding: 80rpx 0;
+}
+
+.fab {
+  position: fixed;
+  right: 32rpx;
+  // 抬高以避开底部默认 TabBar（约 100rpx）+ 间距
+  bottom: 140rpx;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: $c-green;
+  color: #06231a;
+  font-size: 26rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.35);
+  z-index: 50;
 }
 </style>

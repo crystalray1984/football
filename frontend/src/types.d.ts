@@ -110,3 +110,13 @@ declare interface MyBet extends BetRecord {
     match_time: string;
   };
 }
+
+/**
+ * 管理员按日收益页：单条已结算投注（精简投影）
+ */
+declare interface AdminBetRow {
+  openid: string;
+  name: string;
+  match_time: string;
+  result_profit: string;
+}

@@ -3,6 +3,8 @@ import {
   betCondition,
   directionLabel,
   displayOdds,
+  groupBetsByDay,
+  groupUserDailyProfit,
   MAX_BET,
   MIN_BET,
   oddsValue,
@@ -11,6 +13,7 @@ import {
   settlement,
   sumSettledProfit,
   validateAmount,
+  profitDisplay,
 } from "./bet";
 
 // 注意：后端所有赔率（含让球）均存欧赔（含本金），前端一律展示为 欧赔-1（亚赔）
@@ -121,4 +124,109 @@ describe("sumSettledProfit", () => {
     expect(
       sumSettledProfit([{ result_profit: "10" }, { result_profit: "-30" }]),
     ).toBe("-20"));
+});
+
+describe("profitDisplay", () => {
+  it("盈利带 +、win", () =>
+    expect(profitDisplay("45")).toEqual({ state: "win", text: "+45" }));
+  it("亏损 loss", () =>
+    expect(profitDisplay("-20")).toEqual({ state: "loss", text: "-20" }));
+  it("持平 flat", () =>
+    expect(profitDisplay("0")).toEqual({ state: "flat", text: "0" }));
+  it("去末尾 0", () =>
+    expect(profitDisplay("95.50")).toEqual({ state: "win", text: "+95.5" }));
+});
+
+const row = (
+  openid: string,
+  name: string,
+  match_time: string,
+  result_profit: string,
+): AdminBetRow => ({ openid, name, match_time, result_profit });
+
+describe("groupUserDailyProfit", () => {
+  it("空数组", () => expect(groupUserDailyProfit([])).toEqual([]));
+  it("单日多用户按收益倒序，含当日合计", () => {
+    expect(
+      groupUserDailyProfit([
+        row("o1", "张三", "2026-06-21T18:00:00", "120"),
+        row("o2", "李四", "2026-06-21T20:00:00", "-150"),
+      ]),
+    ).toEqual([
+      {
+        date: "2026-06-21",
+        total: "-30",
+        users: [
+          { name: "张三", profit: "120" },
+          { name: "李四", profit: "-150" },
+        ],
+      },
+    ]);
+  });
+  it("同用户多笔累加", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-21T18:00:00", "120"),
+      row("o1", "张三", "2026-06-21T21:00:00", "-20"),
+    ]);
+    expect(g[0].users).toEqual([{ name: "张三", profit: "100" }]);
+    expect(g[0].total).toBe("100");
+  });
+  it("多日按日倒序", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-20T18:00:00", "10"),
+      row("o1", "张三", "2026-06-21T18:00:00", "5"),
+    ]);
+    expect(g.map((d) => d.date)).toEqual(["2026-06-21", "2026-06-20"]);
+  });
+  it("同名不同 openid 区分", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-21T18:00:00", "10"),
+      row("o2", "张三", "2026-06-21T19:00:00", "20"),
+    ]);
+    expect(g[0].users.length).toBe(2);
+    expect(g[0].total).toBe("30");
+  });
+  it("小数收益累加精确", () => {
+    const g = groupUserDailyProfit([
+      row("o1", "张三", "2026-06-21T18:00:00", "10.5"),
+      row("o1", "张三", "2026-06-21T19:00:00", "-7.25"),
+      row("o2", "李四", "2026-06-21T20:00:00", "20.75"),
+    ]);
+    expect(g[0].users).toEqual([
+      { name: "李四", profit: "20.75" },
+      { name: "张三", profit: "3.25" },
+    ]);
+    expect(g[0].total).toBe("24");
+  });
+});
+
+// 最小 MyBet 夹具：仅分组所需字段
+const mb = (match_time: string, result_profit: string | null): MyBet =>
+  ({ result_profit, match: { match_time } } as unknown as MyBet);
+
+describe("groupBetsByDay", () => {
+  it("空数组", () => expect(groupBetsByDay([])).toEqual([]));
+  it("按比赛日分组并按日倒序，组内保持输入顺序", () => {
+    const a = mb("2026-06-20T18:00:00", "10");
+    const b = mb("2026-06-21T20:00:00", "5");
+    const c = mb("2026-06-20T21:00:00", "-3");
+    const groups = groupBetsByDay([a, b, c]);
+    expect(groups.map((g) => g.date)).toEqual(["2026-06-21", "2026-06-20"]);
+    expect(groups[1].bets).toEqual([a, c]);
+  });
+  it("当日收益排除未结算", () => {
+    const groups = groupBetsByDay([
+      mb("2026-06-20T18:00:00", "10"),
+      mb("2026-06-20T19:00:00", null),
+      mb("2026-06-20T20:00:00", "-3"),
+    ]);
+    expect(groups[0].profit).toBe("7");
+  });
+  it("跨年区分", () => {
+    const groups = groupBetsByDay([
+      mb("2025-06-21T18:00:00", "1"),
+      mb("2026-06-21T18:00:00", "2"),
+    ]);
+    expect(groups.map((g) => g.date)).toEqual(["2026-06-21", "2025-06-21"]);
+  });
 });
