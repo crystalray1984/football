@@ -125,6 +125,8 @@ declare interface AdminBetRow {
  * 排行榜单行（后端预聚合）
  */
 declare interface RankRow {
+  /** 用户 openid（前端列表行唯一 key） */
+  openid: string;
   /** 用户昵称，可能为空 */
   name: string;
   /** 预计算百分比数值，不含 %，1 位小数（如 66.7） */

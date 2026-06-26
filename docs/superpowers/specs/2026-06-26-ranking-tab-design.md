@@ -64,7 +64,8 @@ async function getRank(_req: FastifyRequest, reply: FastifyReply) {
     u.profit = u.profit.add(b.result_profit ?? 0);
   }
 
-  const data = [...map.values()].map((u) => ({
+  const data = [...map.entries()].map(([openid, u]) => ({
+    openid,
     name: u.name,
     winRate: new Decimal(u.win).div(u.valid).mul(100).toDecimalPlaces(1).toNumber(),
     profit: u.profit.toString(),
@@ -82,6 +83,7 @@ async function getRank(_req: FastifyRequest, reply: FastifyReply) {
 ```ts
 /** 排行榜单行（后端预聚合） */
 declare interface RankRow {
+  openid: string;   // 用户 openid（前端列表行唯一 key）
   name: string;     // 用户昵称，可能为空
   winRate: number;  // 预计算百分比数值，不含 %，1 位小数（如 66.7）
   profit: string;   // 有效投注净收益之和（Decimal 字符串）

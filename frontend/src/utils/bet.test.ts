@@ -234,6 +234,7 @@ describe("groupBetsByDay", () => {
 
 describe("sortRanking", () => {
   const mk = (name: string, winRate: number, profit: string): RankRow => ({
+    openid: "o-" + name,
     name,
     winRate,
     profit,

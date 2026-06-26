@@ -50,7 +50,7 @@ onShow(() => {
       </view>
 
       <view v-if="sorted.length > 0" class="body">
-        <view v-for="(r, i) in sorted" :key="i" class="row">
+        <view v-for="r in sorted" :key="r.openid" class="row">
           <text class="col-name name">{{ r.name || "匿名" }}</text>
           <text class="col-metric rate">{{ formatPercent(r.winRate) }}</text>
           <text

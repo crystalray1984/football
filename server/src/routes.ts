@@ -346,7 +346,8 @@ async function getRank(_req: FastifyRequest, reply: FastifyReply) {
     u.profit = u.profit.add(b.result_profit ?? 0);
   }
 
-  const data = [...map.values()].map((u) => ({
+  const data = [...map.entries()].map(([openid, u]) => ({
+    openid,
     name: u.name,
     winRate: new Decimal(u.win)
       .div(u.valid)
