@@ -320,6 +320,46 @@ async function getDailyProfit(_req: FastifyRequest, reply: FastifyReply) {
 }
 
 /**
+ * 排行榜：全部用户累计收益 / 胜率（后端预聚合，每人一行）。
+ * 口径：仅有效投注（result ∈ {1,-1}）；胜率为百分比数值（1 位小数，不含 %）。
+ * 与其它读接口一致，不做服务端鉴权。
+ */
+async function getRank(_req: FastifyRequest, reply: FastifyReply) {
+  const bets = await Bet.findAll({
+    where: { result: { [Op.in]: [1, -1] } },
+    include: [{ model: User, as: "user", attributes: ["name"] }],
+    attributes: ["openid", "result", "result_profit"],
+  });
+
+  const map = new Map<
+    string,
+    { name: string; valid: number; win: number; profit: Decimal }
+  >();
+  for (const b of bets) {
+    let u = map.get(b.openid);
+    if (!u) {
+      u = { name: b.user?.name ?? "", valid: 0, win: 0, profit: new Decimal(0) };
+      map.set(b.openid, u);
+    }
+    u.valid += 1;
+    if (b.result === 1) u.win += 1;
+    u.profit = u.profit.add(b.result_profit ?? 0);
+  }
+
+  const data = [...map.values()].map((u) => ({
+    name: u.name,
+    winRate: new Decimal(u.win)
+      .div(u.valid)
+      .mul(100)
+      .toDecimalPlaces(1)
+      .toNumber(),
+    profit: u.profit.toString(),
+  }));
+
+  reply.send({ code: 0, data });
+}
+
+/**
  * 投注
  */
 async function bet(req: FastifyRequest, reply: FastifyReply) {
@@ -463,5 +503,6 @@ export default function routes(app: FastifyInstance) {
   app.get("/api/match/bets", getMatchBets);
   app.get("/api/my/bets", getMyBets);
   app.get("/api/admin/daily-profit", getDailyProfit);
+  app.get("/api/rank", getRank);
   app.post("/api/bet", bet);
 }
