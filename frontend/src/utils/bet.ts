@@ -333,3 +333,25 @@ export function groupBetsByDay(bets: MyBet[]): BetDayGroup[] {
   groups.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   return groups;
 }
+
+export type RankSortKey = "profit" | "winRate";
+
+/**
+ * 排行排序：恒倒序；主指标相同按副指标倒序，再相同按 name 升序稳定。
+ * 不修改入参数组（复制后排序）；全程用 Decimal 比较，避免浮点/字典序误差。
+ */
+export function sortRanking(rows: RankRow[], sortKey: RankSortKey): RankRow[] {
+  return [...rows].sort((a, b) => {
+    const aPrimary = sortKey === "profit" ? a.profit : a.winRate;
+    const bPrimary = sortKey === "profit" ? b.profit : b.winRate;
+    const primaryCmp = new Decimal(bPrimary).comparedTo(aPrimary); // 倒序
+    if (primaryCmp !== 0) return primaryCmp;
+
+    const aSecondary = sortKey === "profit" ? a.winRate : a.profit;
+    const bSecondary = sortKey === "profit" ? b.winRate : b.profit;
+    const secondaryCmp = new Decimal(bSecondary).comparedTo(aSecondary); // 倒序
+    if (secondaryCmp !== 0) return secondaryCmp;
+
+    return a.name.localeCompare(b.name); // 名称升序稳定
+  });
+}

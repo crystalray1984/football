@@ -120,3 +120,15 @@ declare interface AdminBetRow {
   match_time: string;
   result_profit: string;
 }
+
+/**
+ * 排行榜单行（后端预聚合）
+ */
+declare interface RankRow {
+  /** 用户昵称，可能为空 */
+  name: string;
+  /** 预计算百分比数值，不含 %，1 位小数（如 66.7） */
+  winRate: number;
+  /** 有效投注净收益之和（Decimal 字符串） */
+  profit: string;
+}

@@ -11,6 +11,7 @@ import {
   potentialWin,
   recordOddsText,
   settlement,
+  sortRanking,
   sumSettledProfit,
   validateAmount,
   profitDisplay,
@@ -228,5 +229,57 @@ describe("groupBetsByDay", () => {
       mb("2026-06-21T18:00:00", "2"),
     ]);
     expect(groups.map((g) => g.date)).toEqual(["2026-06-21", "2025-06-21"]);
+  });
+});
+
+describe("sortRanking", () => {
+  const mk = (name: string, winRate: number, profit: string): RankRow => ({
+    name,
+    winRate,
+    profit,
+  });
+
+  it("空数组返回空", () => expect(sortRanking([], "profit")).toEqual([]));
+
+  it("收益倒序为主", () => {
+    const rows = [mk("A", 50, "10"), mk("B", 50, "30"), mk("C", 50, "20")];
+    expect(sortRanking(rows, "profit").map((r) => r.name)).toEqual(["B", "C", "A"]);
+  });
+
+  it("收益相同按胜率副指标倒序", () => {
+    const rows = [mk("A", 40, "10"), mk("B", 80, "10"), mk("C", 60, "10")];
+    expect(sortRanking(rows, "profit").map((r) => r.name)).toEqual(["B", "C", "A"]);
+  });
+
+  it("胜率倒序为主", () => {
+    const rows = [mk("A", 40, "10"), mk("B", 80, "10"), mk("C", 60, "10")];
+    expect(sortRanking(rows, "winRate").map((r) => r.name)).toEqual(["B", "C", "A"]);
+  });
+
+  it("胜率相同按收益副指标倒序", () => {
+    const rows = [mk("A", 50, "10"), mk("B", 50, "30"), mk("C", 50, "20")];
+    expect(sortRanking(rows, "winRate").map((r) => r.name)).toEqual(["B", "C", "A"]);
+  });
+
+  it("主副指标都相同按名称升序稳定", () => {
+    const rows = [mk("Bob", 50, "10"), mk("Ann", 50, "10")];
+    expect(sortRanking(rows, "profit").map((r) => r.name)).toEqual(["Ann", "Bob"]);
+  });
+
+  it("收益按数值而非字典序（Decimal）", () => {
+    const rows = [mk("A", 50, "9"), mk("B", 50, "100")];
+    expect(sortRanking(rows, "profit").map((r) => r.name)).toEqual(["B", "A"]);
+  });
+
+  it("负收益排在正收益之后", () => {
+    const rows = [mk("A", 50, "-5"), mk("B", 50, "5"), mk("C", 50, "0")];
+    expect(sortRanking(rows, "profit").map((r) => r.name)).toEqual(["B", "C", "A"]);
+  });
+
+  it("不修改入参数组", () => {
+    const rows = [mk("A", 10, "10"), mk("B", 20, "20")];
+    const copy = [...rows];
+    sortRanking(rows, "profit");
+    expect(rows).toEqual(copy);
   });
 });
