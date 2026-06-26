@@ -60,6 +60,13 @@ export function formatTime(input: string | Date): string {
 }
 
 /**
+ * 百分比渲染：保留 1 位小数并拼 %（如 66.7 → "66.7%"，50 → "50.0%"）
+ */
+export function formatPercent(n: number): string {
+  return new Decimal(n).toFixed(1) + "%";
+}
+
+/**
  * 状态文案
  */
 export function matchStatusText(state: "pending" | "playing" | "end"): string {

@@ -5,6 +5,7 @@ import {
   formatHandicap,
   formatMatchTime,
   formatMoney,
+  formatPercent,
   formatTime,
   matchStatusText,
 } from "./format";
@@ -46,4 +47,11 @@ describe("formatDay", () => {
 });
 describe("formatTime", () => {
   it("HH:mm", () => expect(formatTime("2026-06-21T18:05:00")).toBe("18:05"));
+});
+
+describe("formatPercent", () => {
+  it("一位小数原样", () => expect(formatPercent(66.7)).toBe("66.7%"));
+  it("整数补一位小数", () => expect(formatPercent(50)).toBe("50.0%"));
+  it("100", () => expect(formatPercent(100)).toBe("100.0%"));
+  it("0", () => expect(formatPercent(0)).toBe("0.0%"));
 });
