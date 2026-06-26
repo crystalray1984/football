@@ -17,6 +17,12 @@
       }
     },
     {
+      "path": "pages/rank/index",
+      "style": {
+        "navigationBarTitleText": "排行"
+      }
+    },
+    {
       "path": "pages/admin/daily/index",
       "style": {
         "navigationBarTitleText": "用户收益"
@@ -34,6 +40,12 @@
         "text": "主页",
         "iconPath": "static/tabbar/home.png",
         "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/rank/index",
+        "text": "排行",
+        "iconPath": "static/tabbar/rank.png",
+        "selectedIconPath": "static/tabbar/rank-active.png"
       },
       {
         "pagePath": "pages/my/index",
