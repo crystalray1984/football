@@ -338,7 +338,12 @@ async function getRank(_req: FastifyRequest, reply: FastifyReply) {
   for (const b of bets) {
     let u = map.get(b.openid);
     if (!u) {
-      u = { name: b.user?.name ?? "", valid: 0, win: 0, profit: new Decimal(0) };
+      u = {
+        name: b.user?.name ?? "",
+        valid: 0,
+        win: 0,
+        profit: new Decimal(0),
+      };
       map.set(b.openid, u);
     }
     u.valid += 1;
@@ -356,6 +361,18 @@ async function getRank(_req: FastifyRequest, reply: FastifyReply) {
       .toNumber(),
     profit: u.profit.toString(),
   }));
+
+  //添加庄家收益
+  if (data.length > 0) {
+    data.push({
+      openid: "",
+      name: "庄家",
+      winRate: 0,
+      profit: Decimal(0)
+        .sub(data.reduce((total, row) => total.add(row.profit), Decimal(0)))
+        .toString(),
+    });
+  }
 
   reply.send({ code: 0, data });
 }
@@ -473,7 +490,11 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
 
   //判断单场比赛此用户总金额
   const sum = await Bet.sum("amount", { where: { match_id, openid } });
-  if (Decimal(sum || 0).add(amount).gt(config.max_bet)) {
+  if (
+    Decimal(sum || 0)
+      .add(amount)
+      .gt(config.max_bet)
+  ) {
     reply.send({
       code: -1,
       msg: "单场比赛投注超限",
