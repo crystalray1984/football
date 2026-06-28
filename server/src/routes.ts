@@ -383,7 +383,7 @@ async function getRank(_req: FastifyRequest, reply: FastifyReply) {
 async function bet(req: FastifyRequest, reply: FastifyReply) {
   const { match_id, type, amount, condition } = req.body as {
     match_id: number;
-    type: "ah1" | "ah2" | "win1" | "win2" | "draw";
+    type: "ah1" | "ah2" | "win1" | "win2" | "draw" | "over" | "under";
     amount: number;
     condition: string;
   };
@@ -480,6 +480,22 @@ async function bet(req: FastifyRequest, reply: FastifyReply) {
         value = match.draw_value;
         break;
     }
+  } else if (type === "over" || type === "under") {
+    if (!match.ou_open) {
+      reply.send({
+        code: -1,
+        msg: "未开放大小球盘口",
+      });
+      return;
+    }
+    if (!Decimal(match.ou_condition).eq(condition)) {
+      reply.send({
+        code: -2,
+        msg: "比赛盘口已变化，重新下注",
+      });
+      return;
+    }
+    value = type === "over" ? match.over_value : match.under_value;
   } else {
     reply.send({
       code: -1,
