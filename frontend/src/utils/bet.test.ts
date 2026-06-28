@@ -3,6 +3,7 @@ import {
   betCondition,
   directionLabel,
   displayOdds,
+  getBetResult,
   groupBetsByDay,
   groupUserDailyProfit,
   isOverUnder,
@@ -116,6 +117,128 @@ describe("recordOddsText", () => {
     expect(recordOddsText({ type: "under", condition: "2.5", value: "1.88" }, match)).toBe(
       "大小球 小 2.5 @0.88",
     ));
+});
+
+describe("getBetResult 大小球", () => {
+  const cases: Array<{
+    name: string;
+    type: "over" | "under";
+    condition: string;
+    score1: number;
+    score2: number;
+    expected: {
+      state: "win" | "loss" | "flat";
+      result_profit: string;
+      text: string;
+    };
+  }> = [
+    {
+      name: "2.5 盘总进球 3：大球全赢",
+      type: "over",
+      condition: "2.5",
+      score1: 2,
+      score2: 1,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "2.5 盘总进球 3：小球全输",
+      type: "under",
+      condition: "2.5",
+      score1: 2,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-100", text: "-100" },
+    },
+    {
+      name: "2.5 盘总进球 2：大球全输",
+      type: "over",
+      condition: "2.5",
+      score1: 1,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-100", text: "-100" },
+    },
+    {
+      name: "2.5 盘总进球 2：小球全赢",
+      type: "under",
+      condition: "2.5",
+      score1: 1,
+      score2: 1,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "3 盘总进球 3：大球走盘",
+      type: "over",
+      condition: "3",
+      score1: 2,
+      score2: 1,
+      expected: { state: "flat", result_profit: "0", text: "0" },
+    },
+    {
+      name: "3 盘总进球 3：小球走盘",
+      type: "under",
+      condition: "3",
+      score1: 2,
+      score2: 1,
+      expected: { state: "flat", result_profit: "0", text: "0" },
+    },
+    {
+      name: "2.75 盘总进球 3：大球半赢",
+      type: "over",
+      condition: "2.75",
+      score1: 2,
+      score2: 1,
+      expected: { state: "win", result_profit: "47.5", text: "+47.5" },
+    },
+    {
+      name: "2.75 盘总进球 3：小球半输",
+      type: "under",
+      condition: "2.75",
+      score1: 2,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-50", text: "-50" },
+    },
+    {
+      name: "2.75 盘总进球 2：大球全输",
+      type: "over",
+      condition: "2.75",
+      score1: 1,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-100", text: "-100" },
+    },
+    {
+      name: "2.75 盘总进球 2：小球全赢",
+      type: "under",
+      condition: "2.75",
+      score1: 1,
+      score2: 1,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "2.25 盘总进球 2：大球半输",
+      type: "over",
+      condition: "2.25",
+      score1: 1,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-50", text: "-50" },
+    },
+    {
+      name: "2.25 盘总进球 2：小球半赢",
+      type: "under",
+      condition: "2.25",
+      score1: 1,
+      score2: 1,
+      expected: { state: "win", result_profit: "47.5", text: "+47.5" },
+    },
+  ];
+
+  it.each(cases)("$name", ({ type, condition, score1, score2, expected }) => {
+    expect(
+      getBetResult(
+        { type, condition, amount: "100", value: "1.95" },
+        score1,
+        score2,
+      ),
+    ).toEqual(expected);
+  });
 });
 
 describe("settlement", () => {

@@ -202,8 +202,13 @@ export function getBetResult(
     result_value = score1 > score2 ? "1" : "-1";
   } else if (bet.type === "win2") {
     result_value = score1 < score2 ? "1" : "-1";
-  } else {
+  } else if (bet.type === "draw") {
     result_value = score1 === score2 ? "1" : "-1";
+  } else if (bet.type === "over") {
+    result_value = compareScore(Decimal(score1).add(score2), bet.condition);
+  } else {
+    // under：临界点减总进球，方向与 over 相反
+    result_value = compareScore(bet.condition, Decimal(score1).add(score2));
   }
 
   //胜负计算
