@@ -241,6 +241,120 @@ describe("getBetResult 大小球", () => {
   });
 });
 
+describe("getBetResult 让球与胜平负", () => {
+  const cases: Array<{
+    name: string;
+    type: "ah1" | "ah2" | "win1" | "win2" | "draw";
+    condition: string;
+    score1: number;
+    score2: number;
+    expected: {
+      state: "win" | "loss" | "flat";
+      result_profit: string;
+      text: string;
+    };
+  }> = [
+    {
+      name: "让球主队 -0.5 比分 1:0：全赢",
+      type: "ah1",
+      condition: "-0.5",
+      score1: 1,
+      score2: 0,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "让球主队 -0.5 比分 0:1：全输",
+      type: "ah1",
+      condition: "-0.5",
+      score1: 0,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-100", text: "-100" },
+    },
+    {
+      name: "让球主队 -1 比分 2:1：走盘退本",
+      type: "ah1",
+      condition: "-1",
+      score1: 2,
+      score2: 1,
+      expected: { state: "flat", result_profit: "0", text: "0" },
+    },
+    {
+      name: "让球主队 -0.75 比分 1:0：半赢",
+      type: "ah1",
+      condition: "-0.75",
+      score1: 1,
+      score2: 0,
+      expected: { state: "win", result_profit: "47.5", text: "+47.5" },
+    },
+    {
+      name: "让球主队 -0.25 比分 1:1：半输",
+      type: "ah1",
+      condition: "-0.25",
+      score1: 1,
+      score2: 1,
+      expected: { state: "loss", result_profit: "-50", text: "-50" },
+    },
+    {
+      name: "让球客队 +0.5 比分 1:1：受让全赢",
+      type: "ah2",
+      condition: "0.5",
+      score1: 1,
+      score2: 1,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "主胜 比分 2:1：赢",
+      type: "win1",
+      condition: "0",
+      score1: 2,
+      score2: 1,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "主胜 比分 1:2：输",
+      type: "win1",
+      condition: "0",
+      score1: 1,
+      score2: 2,
+      expected: { state: "loss", result_profit: "-100", text: "-100" },
+    },
+    {
+      name: "客胜 比分 1:2：赢",
+      type: "win2",
+      condition: "0",
+      score1: 1,
+      score2: 2,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "平局 比分 1:1：赢",
+      type: "draw",
+      condition: "0",
+      score1: 1,
+      score2: 1,
+      expected: { state: "win", result_profit: "95", text: "+95" },
+    },
+    {
+      name: "平局 比分 1:0：输",
+      type: "draw",
+      condition: "0",
+      score1: 1,
+      score2: 0,
+      expected: { state: "loss", result_profit: "-100", text: "-100" },
+    },
+  ];
+
+  it.each(cases)("$name", ({ type, condition, score1, score2, expected }) => {
+    expect(
+      getBetResult(
+        { type, condition, amount: "100", value: "1.95" },
+        score1,
+        score2,
+      ),
+    ).toEqual(expected);
+  });
+});
+
 describe("settlement", () => {
   it("未结算", () =>
     expect(settlement({ result_profit: null })).toEqual({ state: "pending", text: "待结算" }));
