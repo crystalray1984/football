@@ -7,8 +7,8 @@ import {
   displayOdds,
   getBetResult,
   oddsValue,
-  SettlementState,
   type BetType,
+  type SettlementState,
 } from "@/utils/bet";
 import { formatMatchTime, matchStatusText } from "@/utils/format";
 import {
@@ -250,6 +250,29 @@ const emulateTotal = computed(() => {
             :value="odds('win2')"
             :disabled="!canBet()"
             @click="openBet('win2')"
+        /></view>
+      </view>
+    </template>
+
+    <!-- 大小球 -->
+    <template v-if="match.ou_open">
+      <view class="sec-head">
+        <text class="sec-title"><text class="bar" />大小球</text>
+      </view>
+      <view class="market">
+        <view class="cell"
+          ><OddsButton
+            :label="label('over')"
+            :value="odds('over')"
+            :disabled="!canBet()"
+            @click="openBet('over')"
+        /></view>
+        <view class="cell"
+          ><OddsButton
+            :label="label('under')"
+            :value="odds('under')"
+            :disabled="!canBet()"
+            @click="openBet('under')"
         /></view>
       </view>
     </template>

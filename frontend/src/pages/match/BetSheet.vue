@@ -3,12 +3,13 @@ import {
   directionLabel,
   displayOdds,
   isAsian,
+  isOverUnder,
   oddsValue,
   potentialWin,
   validateAmount,
   type BetType,
 } from "@/utils/bet";
-import { handicap } from "@/utils/format";
+import { goalLine, handicap } from "@/utils/format";
 import { computed, ref, watch } from "vue";
 import OddsButton from "./OddsButton.vue";
 
@@ -41,10 +42,19 @@ watch(
 );
 
 /** 该弹层展示的方向组 */
-const group = computed<BetType[]>(() =>
-  isAsian(props.type) ? ["ah1", "ah2"] : ["win1", "draw", "win2"],
-);
+const group = computed<BetType[]>(() => {
+  if (isAsian(props.type)) return ["ah1", "ah2"];
+  if (isOverUnder(props.type)) return ["over", "under"];
+  return ["win1", "draw", "win2"];
+});
 const isAh = computed(() => isAsian(props.type));
+const isOu = computed(() => isOverUnder(props.type));
+const isThree = computed(() => !isAh.value && !isOu.value);
+const title = computed(() => {
+  if (isAh.value) return "让球盘";
+  if (isOu.value) return "大小球";
+  return "胜平负";
+});
 
 const amount = computed(() => parseInt(amountInput.value || "0", 10) || 0);
 const valid = computed(() => validateAmount(amount.value));
@@ -58,6 +68,9 @@ const subtitle = computed(() => {
     return `${base} · 让球 ${props.match.team1_name} ${handicap(
       props.match.ah_condition,
     )}`;
+  }
+  if (isOu.value) {
+    return `${base} · 大小球 ${goalLine(props.match.ou_condition)}`;
   }
   return base;
 });
@@ -87,12 +100,12 @@ function btnValue(t: BetType): string {
       <view class="grabber" />
 
       <view class="head">
-        <text class="title">投注 · {{ isAh ? "让球盘" : "胜平负" }}</text>
+        <text class="title">投注 · {{ title }}</text>
         <text class="close" @click="emit('close')">✕</text>
       </view>
       <text class="subtitle">{{ subtitle }}</text>
 
-      <view class="group" :class="{ three: !isAh }">
+      <view class="group" :class="{ three: isThree }">
         <view v-for="t in group" :key="t" class="cell">
           <OddsButton
             :label="btnLabel(t)"
