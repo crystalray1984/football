@@ -7,6 +7,7 @@ import {
   formatMoney,
   formatPercent,
   formatTime,
+  goalLine,
   matchStatusText,
 } from "./format";
 
@@ -54,4 +55,11 @@ describe("formatPercent", () => {
   it("整数补一位小数", () => expect(formatPercent(50)).toBe("50.0%"));
   it("100", () => expect(formatPercent(100)).toBe("100.0%"));
   it("0", () => expect(formatPercent(0)).toBe("0.0%"));
+});
+
+describe("goalLine", () => {
+  it("半球保持单一数字", () => expect(goalLine("2.5")).toBe("2.5"));
+  it("整数保持单一数字", () => expect(goalLine("3")).toBe("3"));
+  it("2.75 显示为 2.5/3", () => expect(goalLine("2.75")).toBe("2.5/3"));
+  it("2.25 显示为 2/2.5", () => expect(goalLine("2.25")).toBe("2/2.5"));
 });

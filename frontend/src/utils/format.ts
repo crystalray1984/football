@@ -32,6 +32,19 @@ export function handicap(condition: string | number | Decimal) {
 }
 
 /**
+ * 大小球盘口展示：恒正、无符号；四分一球用斜杠
+ * （2.75 → "2.5/3"、2.25 → "2/2.5"）。
+ */
+export function goalLine(condition: string | number | Decimal): string {
+  if (Decimal(condition).mul(4).mod(2).eq(0)) {
+    return Decimal(condition).toString();
+  }
+  return [Decimal(condition).sub("0.25"), Decimal(condition).add("0.25")]
+    .map((t) => t.toString())
+    .join("/");
+}
+
+/**
  * 金额格式化：最多两位小数（四舍五入到 2 位后去掉末尾多余的 0）
  */
 export function formatMoney(amount: string | number | Decimal): string {
