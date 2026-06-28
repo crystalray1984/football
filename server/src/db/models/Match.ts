@@ -73,14 +73,8 @@ export class Match extends Model<InferAttributes<Match>> {
   @Column(DataType.DECIMAL)
   declare ah2_value: string;
 
-  @Column(DataType.STRING)
-  declare ah_hash: string;
-
   @Column(DataType.TINYINT)
   declare win_open: number;
-
-  @Column(DataType.STRING)
-  declare win_hash: string;
 
   @Column(DataType.DECIMAL)
   declare win1_value: string;
