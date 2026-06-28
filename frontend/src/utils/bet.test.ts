@@ -88,6 +88,8 @@ describe("betCondition", () => {
 describe("validateAmount", () => {
   it("范围内整数有效", () => expect(validateAmount(100)).toBe(true));
   it("低于下限无效", () => expect(validateAmount(MIN_BET - 1)).toBe(false));
+  it("原最小金额 50 现已无效", () => expect(validateAmount(50)).toBe(false));
+  it("恰好等于下限 100 有效", () => expect(validateAmount(100)).toBe(true));
   it("高于上限无效", () => expect(validateAmount(MAX_BET + 1)).toBe(false));
   it("非整数无效", () => expect(validateAmount(100.5)).toBe(false));
 });

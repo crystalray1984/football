@@ -10,7 +10,7 @@ export type BetType =
   | "over"
   | "under";
 
-export const MIN_BET = 50;
+export const MIN_BET = 100;
 export const MAX_BET = 500;
 
 interface MarketMatch {
@@ -117,7 +117,7 @@ export function betCondition(type: BetType, match: MarketMatch): string {
 }
 
 /**
- * 金额校验：50-500 的整数
+ * 金额校验：100-500 的整数
  */
 export function validateAmount(amount: number): boolean {
   return Number.isInteger(amount) && amount >= MIN_BET && amount <= MAX_BET;

@@ -25,7 +25,7 @@ const emit = defineEmits<{
   confirm: [{ type: BetType; amount: number }];
 }>();
 
-const quickAmounts = [50, 100, 200, 500];
+const quickAmounts = [100, 200, 300, 400, 500];
 
 const selected = ref<BetType>(props.type);
 const amountInput = ref("");
@@ -123,11 +123,11 @@ function btnValue(t: BetType): string {
           class="amount-input"
           type="number"
           :value="amountInput"
-          placeholder="50 - 500"
+          placeholder="100 - 500"
           placeholder-style="color: #5d6b85"
           @input="onInput"
         />
-        <text class="limit">限 50 - 500</text>
+        <text class="limit">限 100 - 500</text>
       </view>
 
       <view class="chips">
