@@ -77,6 +77,14 @@ declare interface MatchDetail extends Match {
   win2_value: string;
   /** 平局赔率 */
   draw_value: string;
+  /** 是否开放大小球 1/0 */
+  ou_open: number;
+  /** 大小球临界点 */
+  ou_condition: string;
+  /** 小球赔率 */
+  under_value: string;
+  /** 大球赔率 */
+  over_value: string;
 }
 
 /**
@@ -84,7 +92,7 @@ declare interface MatchDetail extends Match {
  */
 declare interface BetRecord {
   id: number;
-  type: "ah1" | "ah2" | "win1" | "win2" | "draw";
+  type: "ah1" | "ah2" | "win1" | "win2" | "draw" | "over" | "under";
   /** 盘口 */
   condition: string;
   /** 赔率 */

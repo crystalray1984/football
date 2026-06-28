@@ -1,7 +1,14 @@
 import Decimal from "decimal.js";
-import { dayKey, formatMoney, handicap } from "./format";
+import { dayKey, formatMoney, goalLine, handicap } from "./format";
 
-export type BetType = "ah1" | "ah2" | "win1" | "win2" | "draw";
+export type BetType =
+  | "ah1"
+  | "ah2"
+  | "win1"
+  | "win2"
+  | "draw"
+  | "over"
+  | "under";
 
 export const MIN_BET = 50;
 export const MAX_BET = 500;
@@ -10,6 +17,7 @@ interface MarketMatch {
   team1_name: string;
   team2_name: string;
   ah_condition: string;
+  ou_condition: string;
 }
 
 interface OddsMatch {
@@ -18,6 +26,8 @@ interface OddsMatch {
   win1_value: string;
   win2_value: string;
   draw_value: string;
+  over_value: string;
+  under_value: string;
 }
 
 /**
@@ -25,6 +35,13 @@ interface OddsMatch {
  */
 export function isAsian(type: BetType): boolean {
   return type === "ah1" || type === "ah2";
+}
+
+/**
+ * 是否大小球
+ */
+export function isOverUnder(type: BetType): boolean {
+  return type === "over" || type === "under";
 }
 
 /**
@@ -42,6 +59,10 @@ export function directionLabel(type: BetType, match: MarketMatch): string {
       return match.team1_name;
     case "win2":
       return match.team2_name;
+    case "over":
+      return `大 ${goalLine(match.ou_condition)}`;
+    case "under":
+      return `小 ${goalLine(match.ou_condition)}`;
     default:
       return "平局";
   }
@@ -60,6 +81,10 @@ export function oddsValue(type: BetType, match: OddsMatch): string {
       return match.win1_value;
     case "win2":
       return match.win2_value;
+    case "over":
+      return match.over_value;
+    case "under":
+      return match.under_value;
     default:
       return match.draw_value;
   }
@@ -81,11 +106,13 @@ export function potentialWin(amount: string | number, value: string): string {
 }
 
 /**
- * 下注 condition：ah1=让球数；ah2=取反；胜平负="0" 占位
+ * 下注 condition：ah1=让球数；ah2=取反；
+ * over/under=相同大小球临界点；胜平负="0" 占位。
  */
 export function betCondition(type: BetType, match: MarketMatch): string {
   if (type === "ah1") return new Decimal(match.ah_condition).toString();
   if (type === "ah2") return new Decimal(0).sub(match.ah_condition).toString();
+  if (isOverUnder(type)) return new Decimal(match.ou_condition).toString();
   return "0";
 }
 
@@ -112,6 +139,10 @@ export function recordOddsText(
       return `${match.team1_name} 胜 @${displayOdds(bet.value)}`;
     case "win2":
       return `${match.team2_name} 胜 @${displayOdds(bet.value)}`;
+    case "over":
+      return `大小球 大 ${goalLine(bet.condition)} @${displayOdds(bet.value)}`;
+    case "under":
+      return `大小球 小 ${goalLine(bet.condition)} @${displayOdds(bet.value)}`;
     default:
       return `平局 @${displayOdds(bet.value)}`;
   }

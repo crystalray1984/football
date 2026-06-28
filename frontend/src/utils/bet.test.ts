@@ -5,16 +5,17 @@ import {
   displayOdds,
   groupBetsByDay,
   groupUserDailyProfit,
+  isOverUnder,
   MAX_BET,
   MIN_BET,
   oddsValue,
   potentialWin,
+  profitDisplay,
   recordOddsText,
   settlement,
   sortRanking,
   sumSettledProfit,
   validateAmount,
-  profitDisplay,
 } from "./bet";
 
 // 注意：后端所有赔率（含让球）均存欧赔（含本金），前端一律展示为 欧赔-1（亚赔）
@@ -27,7 +28,17 @@ const match = {
   win1_value: "2.10",
   win2_value: "3.05",
   draw_value: "3.20",
+  ou_condition: "2.5",
+  over_value: "1.95",
+  under_value: "1.88",
 };
+
+describe("isOverUnder", () => {
+  it("over 是大小球", () => expect(isOverUnder("over")).toBe(true));
+  it("under 是大小球", () => expect(isOverUnder("under")).toBe(true));
+  it("让球不是大小球", () => expect(isOverUnder("ah1")).toBe(false));
+  it("胜平负不是大小球", () => expect(isOverUnder("draw")).toBe(false));
+});
 
 describe("directionLabel", () => {
   it("让球主队带让球数", () => expect(directionLabel("ah1", match)).toBe("曼城 -0.5"));
@@ -35,11 +46,19 @@ describe("directionLabel", () => {
   it("胜=主队名", () => expect(directionLabel("win1", match)).toBe("曼城"));
   it("负=客队名", () => expect(directionLabel("win2", match)).toBe("利物浦"));
   it("平=平局", () => expect(directionLabel("draw", match)).toBe("平局"));
+  it("大球显示方向与半球盘口", () =>
+    expect(directionLabel("over", match)).toBe("大 2.5"));
+  it("小球显示方向与半球盘口", () =>
+    expect(directionLabel("under", match)).toBe("小 2.5"));
+  it("四分之一球显示斜杠盘口", () =>
+    expect(directionLabel("over", { ...match, ou_condition: "2.75" })).toBe("大 2.5/3"));
 });
 
 describe("oddsValue", () => {
   it("ah1 返回原始欧赔", () => expect(oddsValue("ah1", match)).toBe("1.95"));
   it("draw 返回原始欧赔", () => expect(oddsValue("draw", match)).toBe("3.20"));
+  it("over 返回大球原始欧赔", () => expect(oddsValue("over", match)).toBe("1.95"));
+  it("under 返回小球原始欧赔", () => expect(oddsValue("under", match)).toBe("1.88"));
 });
 
 describe("displayOdds", () => {
@@ -59,6 +78,10 @@ describe("betCondition", () => {
   it("ah1=让球数", () => expect(betCondition("ah1", match)).toBe("-0.5"));
   it("ah2=取反让球数", () => expect(betCondition("ah2", match)).toBe("0.5"));
   it("胜平负占位 0", () => expect(betCondition("draw", match)).toBe("0"));
+  it("over 使用同一个大小球临界点", () =>
+    expect(betCondition("over", match)).toBe("2.5"));
+  it("under 使用同一个大小球临界点且不取反", () =>
+    expect(betCondition("under", match)).toBe("2.5"));
 });
 
 describe("validateAmount", () => {
@@ -84,6 +107,14 @@ describe("recordOddsText", () => {
   it("平局（@亚赔）", () =>
     expect(recordOddsText({ type: "draw", condition: "0", value: "3.20" }, match)).toBe(
       "平局 @2.20",
+    ));
+  it("大球记录显示盘口与亚赔", () =>
+    expect(recordOddsText({ type: "over", condition: "2.5", value: "1.95" }, match)).toBe(
+      "大小球 大 2.5 @0.95",
+    ));
+  it("小球记录显示盘口与亚赔", () =>
+    expect(recordOddsText({ type: "under", condition: "2.5", value: "1.88" }, match)).toBe(
+      "大小球 小 2.5 @0.88",
     ));
 });
 
