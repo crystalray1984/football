@@ -25,7 +25,7 @@ const emit = defineEmits<{
   confirm: [{ type: BetType; amount: number }];
 }>();
 
-const quickAmounts = [100, 200, 300, 400, 500];
+const quickAmounts = [100, 200, 300, 500, 1000];
 
 const selected = ref<BetType>(props.type);
 const amountInput = ref("");
