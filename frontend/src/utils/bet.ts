@@ -11,7 +11,7 @@ export type BetType =
   | "under";
 
 export const MIN_BET = 100;
-export const MAX_BET = 500;
+export const MAX_BET = 1000;
 
 interface MarketMatch {
   team1_name: string;
@@ -328,12 +328,16 @@ export function groupUserDailyProfit(rows: AdminBetRow[]): DailyUserProfit[] {
     }
     const u = users.get(r.openid);
     if (u) u.sum = u.sum.add(r.result_profit);
-    else users.set(r.openid, { name: r.name, sum: new Decimal(r.result_profit) });
+    else
+      users.set(r.openid, { name: r.name, sum: new Decimal(r.result_profit) });
   }
   const result: DailyUserProfit[] = [];
   for (const [date, users] of byDay) {
     const sorted = [...users.values()].sort((a, b) => b.sum.comparedTo(a.sum));
-    const list = sorted.map((u) => ({ name: u.name, profit: u.sum.toString() }));
+    const list = sorted.map((u) => ({
+      name: u.name,
+      profit: u.sum.toString(),
+    }));
     const total = sorted
       .reduce((acc, u) => acc.add(u.sum), new Decimal(0))
       .toString();
