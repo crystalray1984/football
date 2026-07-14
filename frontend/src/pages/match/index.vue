@@ -203,78 +203,80 @@ const emulateTotal = computed(() => {
       <text class="time">{{ formatMatchTime(match.match_time) }}</text>
     </view>
 
-    <!-- 让球盘 -->
-    <view class="sec-head">
-      <text class="sec-title"><text class="bar" />让球盘</text>
-    </view>
-    <view class="market">
-      <view class="cell"
-        ><OddsButton
-          :label="label('ah1')"
-          :value="odds('ah1')"
-          :disabled="!canBet()"
-          @click="openBet('ah1')"
-      /></view>
-      <view class="cell"
-        ><OddsButton
-          :label="label('ah2')"
-          :value="odds('ah2')"
-          :disabled="!canBet()"
-          @click="openBet('ah2')"
-      /></view>
-    </view>
-
-    <!-- 胜平负 -->
-    <template v-if="match.win_open">
+    <template v-if="match.state === 'pending'">
+      <!-- 让球盘 -->
       <view class="sec-head">
-        <text class="sec-title"><text class="bar" />胜平负</text>
-      </view>
-      <view class="market three">
-        <view class="cell"
-          ><OddsButton
-            :label="label('win1')"
-            :value="odds('win1')"
-            :disabled="!canBet()"
-            @click="openBet('win1')"
-        /></view>
-        <view class="cell"
-          ><OddsButton
-            :label="label('draw')"
-            :value="odds('draw')"
-            :disabled="!canBet()"
-            @click="openBet('draw')"
-        /></view>
-        <view class="cell"
-          ><OddsButton
-            :label="label('win2')"
-            :value="odds('win2')"
-            :disabled="!canBet()"
-            @click="openBet('win2')"
-        /></view>
-      </view>
-    </template>
-
-    <!-- 大小球 -->
-    <template v-if="match.ou_open">
-      <view class="sec-head">
-        <text class="sec-title"><text class="bar" />大小球</text>
+        <text class="sec-title"><text class="bar" />让球盘</text>
       </view>
       <view class="market">
         <view class="cell"
           ><OddsButton
-            :label="label('over')"
-            :value="odds('over')"
+            :label="label('ah1')"
+            :value="odds('ah1')"
             :disabled="!canBet()"
-            @click="openBet('over')"
+            @click="openBet('ah1')"
         /></view>
         <view class="cell"
           ><OddsButton
-            :label="label('under')"
-            :value="odds('under')"
+            :label="label('ah2')"
+            :value="odds('ah2')"
             :disabled="!canBet()"
-            @click="openBet('under')"
+            @click="openBet('ah2')"
         /></view>
       </view>
+
+      <!-- 胜平负 -->
+      <template v-if="match.win_open">
+        <view class="sec-head">
+          <text class="sec-title"><text class="bar" />胜平负</text>
+        </view>
+        <view class="market three">
+          <view class="cell"
+            ><OddsButton
+              :label="label('win1')"
+              :value="odds('win1')"
+              :disabled="!canBet()"
+              @click="openBet('win1')"
+          /></view>
+          <view class="cell"
+            ><OddsButton
+              :label="label('draw')"
+              :value="odds('draw')"
+              :disabled="!canBet()"
+              @click="openBet('draw')"
+          /></view>
+          <view class="cell"
+            ><OddsButton
+              :label="label('win2')"
+              :value="odds('win2')"
+              :disabled="!canBet()"
+              @click="openBet('win2')"
+          /></view>
+        </view>
+      </template>
+
+      <!-- 大小球 -->
+      <template v-if="match.ou_open">
+        <view class="sec-head">
+          <text class="sec-title"><text class="bar" />大小球</text>
+        </view>
+        <view class="market">
+          <view class="cell"
+            ><OddsButton
+              :label="label('over')"
+              :value="odds('over')"
+              :disabled="!canBet()"
+              @click="openBet('over')"
+          /></view>
+          <view class="cell"
+            ><OddsButton
+              :label="label('under')"
+              :value="odds('under')"
+              :disabled="!canBet()"
+              @click="openBet('under')"
+          /></view>
+        </view>
+      </template>
     </template>
 
     <!-- 投注记录 -->
