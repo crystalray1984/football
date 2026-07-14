@@ -123,11 +123,11 @@ function btnValue(t: BetType): string {
           class="amount-input"
           type="number"
           :value="amountInput"
-          placeholder="100 - 500"
+          placeholder="100 - 1000"
           placeholder-style="color: #5d6b85"
           @input="onInput"
         />
-        <text class="limit">限 100 - 500</text>
+        <text class="limit">限 100 - 1000</text>
       </view>
 
       <view class="chips">
